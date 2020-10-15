@@ -33,8 +33,7 @@ using json = nlohmann::json;
  */
 amber_sdk::amber_sdk(const char *license_id, const char *license_file) {
     this->curl = curl_easy_init();
-    this->token = "";
-    // this->reauth_time
+    this->reauth_time = 0;
 
     char *env_license_file = getenv("AMBER_LICENSE_FILE");
     char *env_license_id = getenv("AMBER_LICENSE_ID");
@@ -84,23 +83,26 @@ amber_sdk::~amber_sdk() {
 }
 
 CURL *amber_sdk::create_sensor(std::string label) {
+    this->authenticate();
     CURLcode res;
     return NULL;
 }
 
 CURL *amber_sdk::update_label(std::string sensor_id, std::string label) {
+    this->authenticate();
     CURLcode res;
     return NULL;
 }
 
 CURL *amber_sdk::delete_sensor(std::string sensor_id) {
+    this->authenticate();
     CURLcode res;
     return NULL;
 }
 
 CURL *amber_sdk::list_sensors() {
-    CURLcode res;
     this->authenticate();
+    CURLcode res;
     return NULL;
 }
 
@@ -108,26 +110,31 @@ CURL *amber_sdk::configure_sensor(std::string sensor_id, int feature_count, int 
                                   int samples_to_buffer, int learning_rate_numerator,
                                   int learning_rate_denominator, int learning_max_clusters,
                                   int learning_max_samples) {
+    this->authenticate();
     CURLcode res;
     return NULL;
 }
 
 CURL *amber_sdk::stream_sensor(std::string sensor_id, std::string csvdata) {
+    this->authenticate();
     CURLcode res;
     return NULL;
 }
 
 CURL *amber_sdk::get_sensor(std::string sensor_id) {
+    this->authenticate();
     CURLcode res;
     return NULL;
 }
 
 CURL *amber_sdk::get_config(std::string sensor_id) {
+    this->authenticate();
     CURLcode res;
     return NULL;
 }
 
 CURL *amber_sdk::get_status(std::string sensor_id) {
+    this->authenticate();
     CURLcode res;
     return NULL;
 }
@@ -144,6 +151,10 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
  * @return
  */
 bool amber_sdk::authenticate() {
+
+    if (std::time(nullptr) + this->expires_in - 100 < this->reauth_time) {
+        return true;
+    }
 
     CURL *curl;
     CURLcode res;
@@ -165,9 +176,9 @@ bool amber_sdk::authenticate() {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, data.length());
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
-    std::string response_str;
+    // send auth request
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
         fprintf(stderr, "%s\n\n", curl_easy_strerror(res));
@@ -177,7 +188,10 @@ bool amber_sdk::authenticate() {
     // get the token
     json response = json::parse(read_buffer);
     amber_models::auth_response resp = response.get<amber_models::auth_response>();
-    this->token = resp.idToken;
+    this->id_token = resp.idToken;
+    this->refresh_token = resp.refreshToken;
+    this->expires_in = std::stoi(resp.expiresIn);
+    this->reauth_time = std::time(nullptr) + this->expires_in;
 
     curl_easy_cleanup(curl);
 

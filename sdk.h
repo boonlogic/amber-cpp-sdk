@@ -1,8 +1,8 @@
-#pragma once
+#ifndef AMBER_CPP_SDK_SDK_H
+#define AMBER_CPP_SDK_SDK_H
 
 #include <curl/curl.h>
 #include <string>
-#include <chrono>
 #include <ctime>
 #include <exception>
 #include "nlohmann/json.hpp"
@@ -60,9 +60,12 @@ protected:
 private:
     bool authenticate();
 
-    std::chrono::high_resolution_clock reauth_time;
+    std::time_t reauth_time;
 
-    std::string token;
+    std::string id_token;
+    std::string refresh_token;
+    uint32_t expires_in;
 
     CURL *curl;
 };
+#endif // AMBER_CPP_SDK_SDK_H

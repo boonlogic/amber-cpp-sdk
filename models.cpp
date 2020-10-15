@@ -36,5 +36,7 @@ namespace amber_models {
 
     void from_json(const json &j, auth_response &r) {
         j.at("idToken").get_to(r.idToken);
+        j.at("refreshToken").get_to(r.refreshToken);
+        j.at("expiresIn").get_to(r.expiresIn);
     }
 }

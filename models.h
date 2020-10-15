@@ -32,6 +32,8 @@ namespace amber_models {
     // authentication response
     struct auth_response {
         std::string idToken;
+        std::string expiresIn;
+        std::string refreshToken;
     };
 
     void to_json(json &j, const auth_response &r);
