@@ -137,7 +137,6 @@ namespace amber_models {
         try {
             j.at("label").get_to(r.label_id);
         } catch (nlohmann::detail::out_of_range) {} // not required
-        std::cout << j.dump() << "\n";
         auto usage_info = j.at("usageInfo");
 
         auto put_sensor = usage_info.at("putSensor");
