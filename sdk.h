@@ -39,7 +39,7 @@ public:
 
     CURL *delete_sensor(std::string sensor_id);
 
-    CURL *list_sensors();
+    amber_models::sensor_list *list_sensors();
 
     CURL *configure_sensor(std::string sensor_id, int feature_count, int streaming_window_size,
                            int samples_to_buffer, int learning_rate_numerator,
@@ -59,6 +59,10 @@ protected:
 
 private:
     bool authenticate();
+    std::string auth_bear_header;
+    json get_request(std::string slug);
+    json post_request(std::string slug, std::string body, bool do_auth=true);
+
 
     std::time_t reauth_time;
 

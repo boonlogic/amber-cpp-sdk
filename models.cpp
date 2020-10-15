@@ -39,4 +39,22 @@ namespace amber_models {
         j.at("refreshToken").get_to(r.refreshToken);
         j.at("expiresIn").get_to(r.expiresIn);
     }
+
+    // sensor_instance
+    void to_json(json &j, const sensor_instance &r) {
+        j = json{{"label", r.label_id},
+                 {"sensorId", r.sensor_id},
+                 {"tenantId", r.tenant_id}
+        };
+    }
+
+    void from_json(const json &j, sensor_instance &r) {
+        try {
+            j.at("label").get_to(r.label_id);
+        } catch (nlohmann::detail::out_of_range) {
+            // label not required
+        }
+        j.at("sensorId").get_to(r.sensor_id);
+        j.at("tenantId").get_to(r.tenant_id);
+    }
 }

@@ -82,6 +82,11 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file) {
 amber_sdk::~amber_sdk() {
 }
 
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+    ((std::string *) userp)->append((char *) contents, size * nmemb);
+    return size * nmemb;
+}
+
 CURL *amber_sdk::create_sensor(std::string label) {
     this->authenticate();
     CURLcode res;
@@ -100,10 +105,87 @@ CURL *amber_sdk::delete_sensor(std::string sensor_id) {
     return NULL;
 }
 
-CURL *amber_sdk::list_sensors() {
+json amber_sdk::get_request(std::string slug) {
     this->authenticate();
+    CURL *curl;
     CURLcode res;
-    return NULL;
+    curl = curl_easy_init();
+
+    std::string read_buffer;
+    std::string url = this->license.server + slug;
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    struct curl_slist *hs = NULL;
+    hs = curl_slist_append(hs, "Content-Type: application/json");
+    hs = curl_slist_append(hs, this->auth_bear_header.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
+    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
+
+    // send request
+    res = curl_easy_perform(curl);
+    if (res != CURLE_OK) {
+        curl_easy_cleanup(curl);
+        fprintf(stderr, "%s\n\n", curl_easy_strerror(res));
+        return NULL;
+    }
+
+    curl_easy_cleanup(curl);
+
+    json response = json::parse(read_buffer);
+    return response;
+}
+
+json amber_sdk::post_request(std::string slug, std::string body, bool do_auth) {
+    if (do_auth) {
+        this->authenticate();
+    }
+    CURL *curl;
+    CURLcode res;
+    curl = curl_easy_init();
+
+    // set up request
+    std::string read_buffer;
+    std::string url = this->license.server + slug;
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    struct curl_slist *hs = NULL;
+    hs = curl_slist_append(hs, "Content-Type: application/json");
+    if (do_auth) {
+        hs = curl_slist_append(hs, this->auth_bear_header.c_str());
+    }
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, body.length());
+    // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+
+    // send auth request
+    res = curl_easy_perform(curl);
+    if (res != CURLE_OK) {
+        curl_easy_cleanup(curl);
+        fprintf(stderr, "%s\n\n", curl_easy_strerror(res));
+        return NULL;
+    }
+
+    curl_easy_cleanup(curl);
+
+    json response = json::parse(read_buffer);
+
+    return response;
+}
+
+amber_models::sensor_list *amber_sdk::list_sensors() {
+
+    // initiate request
+    auto response = this->get_request(std::string("/sensors"));
+
+    auto list_response = new amber_models::sensor_list;
+    for (json::iterator it = response.begin(); it != response.end(); ++it) {
+        list_response->push_back(it->get<amber_models::sensor_instance>());
+    }
+
+    return list_response;
 }
 
 CURL *amber_sdk::configure_sensor(std::string sensor_id, int feature_count, int streaming_window_size,
@@ -139,11 +221,6 @@ CURL *amber_sdk::get_status(std::string sensor_id) {
     return NULL;
 }
 
-static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
-    ((std::string *) userp)->append((char *) contents, size * nmemb);
-    return size * nmemb;
-}
-
 /**
  * Authenticate client for the next hour using the credentials given at
   initialization. This acquires and stores an oauth2 token which remains
@@ -152,48 +229,26 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
  */
 bool amber_sdk::authenticate() {
 
+    // note: we can't use
     if (std::time(nullptr) + this->expires_in - 100 < this->reauth_time) {
         return true;
     }
 
-    CURL *curl;
-    CURLcode res;
-    curl = curl_easy_init();
-
-    // create request data
+    // create request body
     amber_models::auth_request request{this->license.username, this->license.password};
     json j = request;
-    std::string data = j.dump();
+    std::string body = j.dump();
 
-    // set up request
-    std::string read_buffer;
-    std::string url = this->license.server + "/oauth2";
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    struct curl_slist *hs = NULL;
-    hs = curl_slist_append(hs, "Content-Type: application/json");
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, data.length());
-    // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    // post request
+    auto response = this->post_request(std::string("/oauth2"), body, false /* do_auth=false */);
 
-    // send auth request
-    res = curl_easy_perform(curl);
-    if (res != CURLE_OK) {
-        fprintf(stderr, "%s\n\n", curl_easy_strerror(res));
-        return false;
-    }
-
-    // get the token
-    json response = json::parse(read_buffer);
+    // process response
     amber_models::auth_response resp = response.get<amber_models::auth_response>();
     this->id_token = resp.idToken;
     this->refresh_token = resp.refreshToken;
     this->expires_in = std::stoi(resp.expiresIn);
     this->reauth_time = std::time(nullptr) + this->expires_in;
-
-    curl_easy_cleanup(curl);
+    this->auth_bear_header = std::string("Authorization: Bearer " + this->id_token);
 
     return true;
 }

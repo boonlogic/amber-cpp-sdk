@@ -39,6 +39,20 @@ namespace amber_models {
     void to_json(json &j, const auth_response &r);
 
     void from_json(const json &j, auth_response &r);
+
+    // sensor instance
+    struct sensor_instance {
+        std::string label_id;
+        std::string sensor_id;
+        std::string tenant_id;
+    };
+
+    void to_json(json &j, const sensor_instance &r);
+
+    void from_json(const json &j, sensor_instance &r);
+
+    // sensor list
+    typedef std::vector<sensor_instance> sensor_list;
 }
 
 #endif //AMBER_CPP_SDK_MODELS_H
