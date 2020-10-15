@@ -87,10 +87,17 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     return size * nmemb;
 }
 
-CURL *amber_sdk::create_sensor(std::string label) {
-    this->authenticate();
-    CURLcode res;
-    return NULL;
+amber_models::create_sensor_response amber_sdk::create_sensor(std::string label) {
+    // create request body
+    amber_models::create_sensor_request request{label};
+    json j = request;
+    std::string body = j.dump();
+
+    // initiate request
+    auto post_response = this->post_request(std::string("/sensor"), body);
+
+    // handle response
+    return post_response.get<amber_models::create_sensor_response>();
 }
 
 CURL *amber_sdk::update_label(std::string sensor_id, std::string label) {

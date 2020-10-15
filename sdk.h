@@ -33,7 +33,7 @@ public:
 
     ~amber_sdk();
 
-    CURL *create_sensor(std::string label);
+    amber_models::create_sensor_response create_sensor(std::string label);
 
     CURL *update_label(std::string sensor_id, std::string label);
 
