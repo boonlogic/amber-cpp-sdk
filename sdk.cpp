@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iostream>
 #include "nlohmann/json.hpp"
+#include "models.h"
 
 using json = nlohmann::json;
 
@@ -58,11 +59,13 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file) {
     wordexp(license_file, &exp_result, 0);
     license_file = exp_result.we_wordv[0];
 
+    // open up license file
     std::ifstream file(license_file);
     if (!file.is_open()) {
         throw amber_except("unable to open %s", license_file);
     }
 
+    // load license file as json
     json license_json;
     file >> license_json;
 
@@ -71,7 +74,10 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file) {
     if (it->empty()) {
         throw amber_except("license_id '%s' not found in '%s'", license_id, license_file);
     }
-    this->license.from_json(*it);
+
+    // rewrite as license_entry structure
+    json amber_entry = *it;
+    this->license = amber_entry.get<amber_models::license_entry>();
 }
 
 amber_sdk::~amber_sdk() {
@@ -126,6 +132,11 @@ CURL *amber_sdk::get_status(std::string sensor_id) {
     return NULL;
 }
 
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+    ((std::string *) userp)->append((char *) contents, size * nmemb);
+    return size * nmemb;
+}
+
 /**
  * Authenticate client for the next hour using the credentials given at
   initialization. This acquires and stores an oauth2 token which remains
@@ -138,27 +149,37 @@ bool amber_sdk::authenticate() {
     CURLcode res;
     curl = curl_easy_init();
 
+    // create request data
+    amber_models::auth_request request{this->license.username, this->license.password};
+    json j = request;
+    std::string data = j.dump();
+
     // set up request
+    std::string read_buffer;
     std::string url = this->license.server + "/oauth2";
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     struct curl_slist *hs = NULL;
     hs = curl_slist_append(hs, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
-    json license_json;
-    this->license.to_json(license_json);
-    std::cout << license_json.dump().c_str() << "\n";
-    auth_request request;
-    request.data.username = this->license.username;
-    request.data.password = this->license.password;
-    json payload;
-    request.to_json(payload);
-    std::cout << payload.dump().c_str() << "\n";
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.dump().c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, data.length());
+    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
+    std::string response_str;
     res = curl_easy_perform(curl);
+    if (res != CURLE_OK) {
+        fprintf(stderr, "%s\n\n", curl_easy_strerror(res));
+        return false;
+    }
+
+    // get the token
+    json response = json::parse(read_buffer);
+    amber_models::auth_response resp = response.get<amber_models::auth_response>();
+    this->token = resp.idToken;
 
     curl_easy_cleanup(curl);
 
     return true;
 }
-
