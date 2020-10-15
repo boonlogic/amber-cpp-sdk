@@ -73,6 +73,36 @@ namespace amber_models {
     void to_json(json &j, const create_sensor_response &r);
 
     void from_json(const json &j, create_sensor_response &r);
+
+    // get sensor response
+    struct usage_element {
+        uint64_t calls_total;
+        uint64_t calls_this_period;
+        std::string last_called;
+    };
+
+    struct post_stream_element : usage_element {
+        uint64_t samples_total;
+        uint64_t samples_this_period;
+    };
+
+    struct get_sensor_response {
+        std::string sensor_id;
+        std::string tenant_id;
+        std::string label_id;
+        struct usage_info {
+            usage_element put_sensor;
+            usage_element post_config;
+            usage_element get_sensor;
+            usage_element get_config;
+            usage_element get_status;
+            post_stream_element post_stream;
+        } usage_info;
+    };
+
+    void to_json(json &j, const get_sensor_response &r);
+
+    void from_json(const json &j, get_sensor_response &r);
 }
 
 #endif //AMBER_CPP_SDK_MODELS_H

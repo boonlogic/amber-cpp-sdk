@@ -33,13 +33,16 @@ public:
 
     ~amber_sdk();
 
-    amber_models::create_sensor_response create_sensor(std::string label);
+    amber_models::create_sensor_response *create_sensor(std::string label);
+
+    amber_models::get_sensor_response *get_sensor(std::string sensor_id);
+
+    amber_models::sensor_list *list_sensors();
 
     CURL *update_label(std::string sensor_id, std::string label);
 
     CURL *delete_sensor(std::string sensor_id);
 
-    amber_models::sensor_list *list_sensors();
 
     CURL *configure_sensor(std::string sensor_id, int feature_count, int streaming_window_size,
                            int samples_to_buffer, int learning_rate_numerator,
@@ -47,8 +50,6 @@ public:
                            int learning_max_samples);
 
     CURL *stream_sensor(std::string sensor_id, std::string csvdata);
-
-    CURL *get_sensor(std::string sensor_id);
 
     CURL *get_config(std::string sensor_id);
 
@@ -60,7 +61,7 @@ protected:
 private:
     bool authenticate();
     std::string auth_bear_header;
-    json get_request(std::string slug);
+    json get_request(std::string slug, std::string sensor_id="");
     json post_request(std::string slug, std::string body, bool do_auth=true);
 
 

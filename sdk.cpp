@@ -87,17 +87,28 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     return size * nmemb;
 }
 
-amber_models::create_sensor_response amber_sdk::create_sensor(std::string label) {
-    // create request body
+amber_models::create_sensor_response *amber_sdk::create_sensor(std::string label) {
     amber_models::create_sensor_request request{label};
     json j = request;
     std::string body = j.dump();
-
-    // initiate request
     auto post_response = this->post_request(std::string("/sensor"), body);
+    auto response = post_response.get<amber_models::create_sensor_response>();
+    return &response;
+}
 
-    // handle response
-    return post_response.get<amber_models::create_sensor_response>();
+amber_models::get_sensor_response *amber_sdk::get_sensor(std::string sensor_id) {
+    auto get_response = this->get_request(std::string("/sensor"), sensor_id);
+    auto response = get_response.get<amber_models::get_sensor_response>();
+    return &response;
+}
+
+amber_models::sensor_list *amber_sdk::list_sensors() {
+    auto response = this->get_request(std::string("/sensors"));
+    auto list_response = new amber_models::sensor_list;
+    for (json::iterator it = response.begin(); it != response.end(); ++it) {
+        list_response->push_back(it->get<amber_models::sensor_instance>());
+    }
+    return list_response;
 }
 
 CURL *amber_sdk::update_label(std::string sensor_id, std::string label) {
@@ -112,7 +123,7 @@ CURL *amber_sdk::delete_sensor(std::string sensor_id) {
     return NULL;
 }
 
-json amber_sdk::get_request(std::string slug) {
+json amber_sdk::get_request(std::string slug, std::string sensor_id) {
     this->authenticate();
     CURL *curl;
     CURLcode res;
@@ -124,6 +135,10 @@ json amber_sdk::get_request(std::string slug) {
     struct curl_slist *hs = NULL;
     hs = curl_slist_append(hs, "Content-Type: application/json");
     hs = curl_slist_append(hs, this->auth_bear_header.c_str());
+    if (sensor_id != "") {
+        auto sensor_header = std::string("sensorId:" + sensor_id);
+        hs = curl_slist_append(hs, sensor_header.c_str());
+    }
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
     curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
@@ -182,19 +197,6 @@ json amber_sdk::post_request(std::string slug, std::string body, bool do_auth) {
     return response;
 }
 
-amber_models::sensor_list *amber_sdk::list_sensors() {
-
-    // initiate request
-    auto response = this->get_request(std::string("/sensors"));
-
-    auto list_response = new amber_models::sensor_list;
-    for (json::iterator it = response.begin(); it != response.end(); ++it) {
-        list_response->push_back(it->get<amber_models::sensor_instance>());
-    }
-
-    return list_response;
-}
-
 CURL *amber_sdk::configure_sensor(std::string sensor_id, int feature_count, int streaming_window_size,
                                   int samples_to_buffer, int learning_rate_numerator,
                                   int learning_rate_denominator, int learning_max_clusters,
@@ -205,12 +207,6 @@ CURL *amber_sdk::configure_sensor(std::string sensor_id, int feature_count, int 
 }
 
 CURL *amber_sdk::stream_sensor(std::string sensor_id, std::string csvdata) {
-    this->authenticate();
-    CURLcode res;
-    return NULL;
-}
-
-CURL *amber_sdk::get_sensor(std::string sensor_id) {
     this->authenticate();
     CURLcode res;
     return NULL;
