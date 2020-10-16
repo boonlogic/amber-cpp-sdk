@@ -13,5 +13,8 @@ int main(int argc, char *argv[]) {
 
     // get sensor
     auto a_sensor = sdk->get_sensor(std::string("00456a69350f72b1"));
+
+    // update a sensor
+    auto b_sensor = sdk->update_sensor(std::string("00456a69350f72b1"), "b_sensor_label");t diff
 }
 

@@ -183,4 +183,32 @@ namespace amber_models {
             post_stream.at("samplesThisPeriod").get_to(r.usage_info.post_stream.samples_this_period);
         }
     }
+
+    void to_json(json &j, const update_sensor_request &r) {
+        j = json{{"label", r.label_id}
+        };
+    }
+
+    void from_json(const json &j, update_sensor_request &r) {
+        memset(&r, 0, sizeof(r));
+        try {
+            j.at("label").get_to(r.label_id);
+        } catch (nlohmann::detail::out_of_range) {} // not required
+    }
+
+    void to_json(json &j, const update_sensor_response &r) {
+        j = json{{"label",    r.label_id},
+                 {"sensorId", r.sensor_id},
+                 {"tenantId", r.tenant_id}
+        };
+    }
+
+    void from_json(const json &j, update_sensor_response &r) {
+        memset(&r, 0, sizeof(r));
+        try {
+            j.at("label").get_to(r.label_id);
+        } catch (nlohmann::detail::out_of_range) {} // not required
+        j.at("sensorId").get_to(r.sensor_id);
+        j.at("tenantId").get_to(r.tenant_id);
+    }
 }

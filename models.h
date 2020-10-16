@@ -29,6 +29,7 @@ namespace amber_models {
 
     void from_json(const json &j, auth_request &r);
 
+    // authentication request
     // authentication response
     struct auth_response {
         std::string idToken;
@@ -103,6 +104,26 @@ namespace amber_models {
     void to_json(json &j, const get_sensor_response &r);
 
     void from_json(const json &j, get_sensor_response &r);
+
+    // update_sensor_request
+    struct update_sensor_request {
+        std::string label_id;
+    };
+
+    void to_json(json &j, const update_sensor_request &r);
+
+    void from_json(const json &j, update_sensor_request &r);
+
+    // update_sensor_response
+    struct update_sensor_response {
+        std::string label_id;
+        std::string sensor_id;
+        std::string tenant_id;
+    };
+
+    void to_json(json &j, const update_sensor_response &r);
+
+    void from_json(const json &j, update_sensor_response &r);
 }
 
 #endif //AMBER_CPP_SDK_MODELS_H

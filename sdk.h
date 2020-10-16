@@ -39,7 +39,7 @@ public:
 
     amber_models::sensor_list *list_sensors();
 
-    CURL *update_label(std::string sensor_id, std::string label);
+    amber_models::update_sensor_response* update_sensor(std::string sensor_id, std::string label);
 
     CURL *delete_sensor(std::string sensor_id);
 
@@ -61,8 +61,9 @@ protected:
 private:
     bool authenticate();
     std::string auth_bear_header;
-    json get_request(std::string slug, std::string sensor_id="");
-    json post_request(std::string slug, std::string body, bool do_auth=true);
+    json get_request(std::string slug, std::string sensor_id);
+    json post_request(std::string slug, std::string sensor_id, std::string body, bool do_auth=true);
+    json put_request(std::string slug, std::string sensor_id, std::string body);
 
 
     std::time_t reauth_time;
