@@ -1,11 +1,7 @@
 #include "sdk.h"
-#include <chrono>
-#include <ctime>
 #include <wordexp.h>
 #include <fstream>
 #include <sstream>
-#include "nlohmann/json.hpp"
-#include "models.h"
 
 using json = nlohmann::json;
 
@@ -31,7 +27,7 @@ using json = nlohmann::json;
  */
 amber_sdk::amber_sdk(const char *license_id, const char *license_file) {
     this->curl = curl_easy_init();
-    this->reauth_time = 0;
+    this->auth_time = 0;
 
     char *env_license_file = getenv("AMBER_LICENSE_FILE");
     char *env_license_id = getenv("AMBER_LICENSE_ID");
@@ -85,12 +81,28 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     return size * nmemb;
 }
 
-amber_models::create_sensor_response *amber_sdk::create_sensor(std::string label) {
-    amber_models::create_sensor_request request{label};
+amber_models::create_sensor_response amber_sdk::create_sensor(std::string label) {
+    amber_models::create_sensor_request request(label);
     json j = request;
     std::string body = j.dump();
     auto post_response = this->post_request(std::string("/sensor"), std::string(""), body);
     auto response = post_response.get<amber_models::create_sensor_response>();
+    return response;
+}
+
+amber_models::configure_sensor_response *
+amber_sdk::configure_sensor(std::string sensor_id, uint16_t feature_count, uint16_t streaming_window_size,
+                            uint32_t samples_to_buffer, uint64_t learning_rate_numerator,
+                            uint32_t learning_rate_denominator, uint16_t learning_max_clusters,
+                            uint64_t learning_max_samples) {
+    amber_models::configure_sensor_request request{feature_count, streaming_window_size, samples_to_buffer,
+                                                   learning_rate_numerator, learning_rate_denominator,
+                                                   learning_max_clusters, learning_max_samples};
+    json j = request;
+    std::string body = j.dump();
+    auto post_response = this->post_request(std::string("/config"), sensor_id, body);
+    auto response = post_response.get<amber_models::configure_sensor_response>();
+
     return &response;
 }
 
@@ -109,7 +121,7 @@ amber_models::sensor_list *amber_sdk::list_sensors() {
     return list_response;
 }
 
-amber_models::update_sensor_response* amber_sdk::update_sensor(std::string sensor_id, std::string label) {
+amber_models::update_sensor_response *amber_sdk::update_sensor(std::string sensor_id, std::string label) {
     amber_models::update_sensor_request request{label};
     json j = request;
     std::string body = j.dump();
@@ -118,9 +130,19 @@ amber_models::update_sensor_response* amber_sdk::update_sensor(std::string senso
     return &response;
 }
 
-CURL *amber_sdk::delete_sensor(std::string sensor_id) {
-    this->authenticate();
-    CURLcode res;
+amber_models::delete_sensor_response *amber_sdk::delete_sensor(std::string sensor_id) {
+    return NULL;
+}
+
+amber_models::stream_sensor_response *amber_sdk::stream_sensor(std::string sensor_id, std::string csvdata) {
+    return NULL;
+}
+
+amber_models::get_config_response *amber_sdk::get_config(std::string sensor_id) {
+    return NULL;
+}
+
+amber_models::get_status_response *amber_sdk::get_status(std::string sensor_id) {
     return NULL;
 }
 
@@ -238,33 +260,6 @@ json amber_sdk::put_request(std::string slug, std::string sensor_id, std::string
     return response;
 }
 
-CURL *amber_sdk::configure_sensor(std::string sensor_id, int feature_count, int streaming_window_size,
-                                  int samples_to_buffer, int learning_rate_numerator,
-                                  int learning_rate_denominator, int learning_max_clusters,
-                                  int learning_max_samples) {
-    this->authenticate();
-    CURLcode res;
-    return NULL;
-}
-
-CURL *amber_sdk::stream_sensor(std::string sensor_id, std::string csvdata) {
-    this->authenticate();
-    CURLcode res;
-    return NULL;
-}
-
-CURL *amber_sdk::get_config(std::string sensor_id) {
-    this->authenticate();
-    CURLcode res;
-    return NULL;
-}
-
-CURL *amber_sdk::get_status(std::string sensor_id) {
-    this->authenticate();
-    CURLcode res;
-    return NULL;
-}
-
 /**
  * Authenticate client for the next hour using the credentials given at
   initialization. This acquires and stores an oauth2 token which remains
@@ -274,7 +269,7 @@ CURL *amber_sdk::get_status(std::string sensor_id) {
 bool amber_sdk::authenticate() {
 
     // note: we can't use
-    if (std::time(nullptr) + this->expires_in - 100 < this->reauth_time) {
+    if (std::time(nullptr) + this->expires_in - 100 < this->auth_time) {
         return true;
     }
 
@@ -287,12 +282,10 @@ bool amber_sdk::authenticate() {
     auto response = this->post_request(std::string("/oauth2"), std::string(""), body, false /* do_auth=false */);
 
     // process response
-    amber_models::auth_response resp = response.get<amber_models::auth_response>();
-    this->id_token = resp.idToken;
-    this->refresh_token = resp.refreshToken;
-    this->expires_in = std::stoi(resp.expiresIn);
-    this->reauth_time = std::time(nullptr) + this->expires_in;
-    this->auth_bear_header = std::string("Authorization: Bearer " + this->id_token);
+    this->auth = response.get<amber_models::auth_response>();
+    this->expires_in = std::stoul (this->auth.expiresIn, nullptr, 0);
+    this->auth_time = std::time(nullptr) + this->expires_in;
+    this->auth_bear_header = std::string("Authorization: Bearer " + this->auth.idToken);
 
     return true;
 }
