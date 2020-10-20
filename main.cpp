@@ -51,6 +51,14 @@ int main(int argc, char *argv[]) {
         std::cout << "error: " << sdk->last_error << "\n";
     }
 
+    // get the configuration
+    amber_models::get_config_response get_config_response;
+    if (sdk->get_config(get_config_response, my_sensor)) {
+        get_config_response.dump();
+    } else {
+        std::cout << "error: " << sdk->last_error << "\n";
+    }
+
     // stream data to a sensor
     amber_models::stream_sensor_response stream_sensor_response;
     std::string csvdata = "0.1001,0.1002,0.2002,0.1111";

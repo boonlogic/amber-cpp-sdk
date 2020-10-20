@@ -428,7 +428,7 @@ namespace amber_models {
 
     class get_status_response {
     public:
-        std::vector<float> pca;
+        std::vector<std::vector<float>> pca;
         std::vector<uint64_t> clusterGrowth;
         std::vector<uint64_t> clusterSizes;
         std::vector<uint16_t> anomalyIndexes;

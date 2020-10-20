@@ -222,7 +222,15 @@ int amber_sdk::get_request(std::string &slug, std::string &sensor_id, json &resp
     if (this->last_code == CURLE_OK) {
         // libcurl is successful, process http code
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &this->last_code);
-        response = json::parse(read_buffer);
+        if (this->last_code >= 200 && this->last_code < 300) {
+            // success
+            response = json::parse(read_buffer);
+        } else {
+            // obtain error message
+            json message_response = json::parse(read_buffer);
+            std::string message = message_response.at("message");
+            std::strncpy(this->last_error, message.c_str(), sizeof(this->last_error) - 1);
+        }
     }
     curl_easy_cleanup(curl);
     return this->last_code;
@@ -271,6 +279,9 @@ amber_sdk::post_request(std::string &slug, std::string &sensor_id, std::string &
             response = json::parse(read_buffer);
         } else {
             // obtain error message
+            json message_response = json::parse(read_buffer);
+            std::string message = message_response.at("message");
+            std::strncpy(this->last_error, message.c_str(), sizeof(this->last_error) - 1);
         }
     }
     curl_easy_cleanup(curl);
@@ -316,6 +327,9 @@ int amber_sdk::put_request(std::string &slug, std::string &sensor_id, std::strin
             response = json::parse(read_buffer);
         } else {
             // obtain error message
+            json message_response = json::parse(read_buffer);
+            std::string message = message_response.at("message");
+            std::strncpy(this->last_error, message.c_str(), sizeof(this->last_error) - 1);
         }
     }
     curl_easy_cleanup(curl);
@@ -325,7 +339,7 @@ int amber_sdk::put_request(std::string &slug, std::string &sensor_id, std::strin
 int amber_sdk::delete_request(std::string &slug, std::string &sensor_id, json &response) {
 
     reset_last_message();
-    if (this->authenticate(response)) {
+    if (!this->authenticate(response)) {
         return this->last_code;
     }
 
@@ -357,6 +371,9 @@ int amber_sdk::delete_request(std::string &slug, std::string &sensor_id, json &r
             response = json::parse(read_buffer);
         } else {
             // obtain error message
+            json message_response = json::parse(read_buffer);
+            std::string message = message_response.at("message");
+            std::strncpy(this->last_error, message.c_str(), sizeof(this->last_error) - 1);
         }
     }
     curl_easy_cleanup(curl);
