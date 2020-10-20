@@ -7,6 +7,12 @@
 
 using json = nlohmann::json;
 
+#define AMBER_DUMP() \
+void dump() { \
+    json j = *this; \
+    std::cout << j.dump(4) << "\n"; \
+}
+
 namespace amber_models {
 
     class license_entry {
@@ -30,6 +36,7 @@ namespace amber_models {
         std::string password;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(auth_request, username, password)
+        AMBER_DUMP()
     };
 
     class auth_response {
@@ -39,40 +46,17 @@ namespace amber_models {
         std::string refreshToken;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(auth_response, idToken, expiresIn, refreshToken)
-
-        void dump() {
-            json j = license_entry{idToken, expiresIn, refreshToken};
-            std::cout << j.dump(4) << "\n";
-        }
+        AMBER_DUMP()
     };
 
     class sensor_instance {
     public:
-        std::string sensorId;
         std::string tenantId;
+        std::string sensorId;
         std::string label;
 
-        // optional labels require custom to_json/from_json methods
-        friend void to_json(json &j, const sensor_instance &r) {
-            j = json{{"label",    r.label},
-                     {"sensorId", r.sensorId},
-                     {"tenantId", r.tenantId}
-            };
-        }
-
-        friend void from_json(const json &j, sensor_instance &r) {
-            try { j.at("label").get_to(r.label); } catch (nlohmann::detail::out_of_range) {} // not required
-            j.at("sensorId").get_to(r.sensorId);
-            j.at("tenantId").get_to(r.tenantId);
-        }
-
-        void dump() {
-            json j = json{{"label",    label},
-                          {"sensorId", sensorId},
-                          {"tenantId", tenantId}
-            };
-            std::cout << j.dump(4) << "\n";
-        }
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(sensor_instance, tenantId, sensorId, label)
+        AMBER_DUMP()
     };
 
     class list_sensors_response {
@@ -90,68 +74,32 @@ namespace amber_models {
                 r.sensors.push_back(sensor.get<amber_models::sensor_instance>());
             }
         }
-
-        void dump() {
-            json j = sensors;
-            std::cout << j.dump(4) << "\n";
-        }
+        AMBER_DUMP()
     };
 
     // post sensor request
     class create_sensor_request {
     public:
 
-        create_sensor_request(std::string label) {
+        explicit create_sensor_request(std::string &label) {
             this->label = label;
         }
 
         std::string label;
 
-        // optional label requires custom to_json/from_json methods
-        friend void to_json(json &j, const create_sensor_request &r) {
-            j = json{{"label", r.label}
-            };
-        }
-
-        friend void from_json(const json &j, create_sensor_request &r) {
-            try { j.at("label").get_to(r.label); } catch (nlohmann::detail::out_of_range) {} // not required
-        }
-
-        void dump() {
-            json j = json{{"label", label}
-            };
-            std::cout << j.dump(4) << "\n";
-        }
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(create_sensor_request, label)
+        AMBER_DUMP()
     };
 
     // post sensor response
     class create_sensor_response {
     public:
-        std::string sensorId;
         std::string tenantId;
+        std::string sensorId;
         std::string label;
 
-        // optional label requires custom to_json/from_json methods
-        friend void to_json(json &j, const create_sensor_response &r) {
-            j = json{{"sensorId", r.sensorId},
-                     {"tenantId", r.tenantId},
-                     {"label",    r.label}
-            };
-        }
-
-        friend void from_json(const json &j, create_sensor_response &r) {
-            try { j.at("label").get_to(r.label); } catch (nlohmann::detail::out_of_range) {} // not required
-            j.at("sensorId").get_to(r.sensorId);
-            j.at("tenantId").get_to(r.tenantId);
-        }
-
-        void dump() {
-            json j = json{{"sensorId", sensorId},
-                          {"tenantId", tenantId},
-                          {"label",    label}
-            };
-            std::cout << j.dump(4) << "\n";
-        }
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(create_sensor_response, tenantId, sensorId, label)
+        AMBER_DUMP()
     };
 
     // get sensor response
@@ -159,136 +107,42 @@ namespace amber_models {
         uint64_t callsTotal;
         uint64_t callsThisPeriod;
         std::string lastCalled;
+
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(usage_element, callsTotal, callsThisPeriod, lastCalled)
+        AMBER_DUMP()
     };
 
-    struct post_stream_element : usage_element {
+    struct post_stream_element {
+        uint64_t callsTotal;
+        uint64_t callsThisPeriod;
+        std::string lastCalled;
         uint64_t samplesTotal;
         uint64_t samplesThisPeriod;
+
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(post_stream_element, callsTotal, callsThisPeriod, samplesTotal, samplesThisPeriod)
+        AMBER_DUMP()
+    };
+
+    struct usage_info {
+        usage_element putSensor;
+        usage_element postConfig;
+        usage_element getSensor;
+        usage_element getConfig;
+        usage_element getStatus;
+        post_stream_element postStream;
+
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(usage_info, putSensor, postConfig, getSensor, getConfig, getStatus, postStream)
     };
 
     class get_sensor_response {
     public:
-        std::string sensorId;
+    std::string sensorId;
         std::string tenantId;
         std::string label;
-        struct usage_info {
-            usage_element putSensor;
-            usage_element postConfig;
-            usage_element getSensor;
-            usage_element getConfig;
-            usage_element getStatus;
-            post_stream_element postStream;
-        } usage_info;
+        usage_info usageInfo;
 
-        void fmt_json(json &j) {
-            j = json{{"sensorId", sensorId},
-                     {"tenantId", tenantId},
-                     {"label",    label},
-                     {"usageInfo",
-                                  {
-                                      {"putSensor", {
-                                                        {"callsTotal", usage_info.putSensor.callsTotal},
-                                                        {"callsThisPeriod", usage_info.putSensor.callsThisPeriod},
-                                                        {"lastCalled", usage_info.putSensor.lastCalled}
-                                                    }
-                                      },
-                                      {"postConfig", {
-                                                         {"callsTotal", usage_info.postConfig.callsTotal},
-                                                         {"callsThisPeriod", usage_info.postConfig.callsThisPeriod},
-                                                         {"lastCalled", usage_info.postConfig.lastCalled}
-                                                     }
-                                      },
-                                      {"getSensor", {
-                                                        {"callsTotal", usage_info.getSensor.callsTotal},
-                                                        {"callsThisPeriod", usage_info.getSensor.callsThisPeriod},
-                                                        {"lastCalled", usage_info.getSensor.lastCalled}
-                                                    }
-                                      },
-                                      {"getConfig", {
-                                                        {"callsTotal", usage_info.getConfig.callsTotal},
-                                                        {"callsThisPeriod", usage_info.getConfig.callsThisPeriod},
-                                                        {"lastCalled", usage_info.getConfig.lastCalled}
-                                                    }
-                                      },
-                                      {"getStatus", {
-                                                        {"callsTotal", usage_info.getStatus.callsTotal},
-                                                        {"callsThisPeriod", usage_info.getStatus.callsThisPeriod},
-                                                        {"lastCalled", usage_info.getStatus.lastCalled}
-                                                    }
-                                      },
-                                      {"postStream", {
-                                                         {"callsTotal", usage_info.postStream.callsTotal},
-                                                         {"callsThisPeriod", usage_info.postStream.callsThisPeriod},
-                                                         {"lastCalled", usage_info.postStream.lastCalled},
-                                                         {"samplesTotal", usage_info.postStream.samplesTotal},
-                                                         {"samplesThisPeriod", usage_info.postStream.samplesThisPeriod}
-                                                     }
-                                      }
-                                  }
-                     }
-            };
-        }
-
-        friend void to_json(json &j, get_sensor_response &r) {
-            r.fmt_json(j);
-        }
-
-        friend void from_json(const json &j, get_sensor_response &r) {
-            j.at("sensorId").get_to(r.sensorId);
-            j.at("tenantId").get_to(r.tenantId);
-            try { j.at("label").get_to(r.label); } catch (nlohmann::detail::out_of_range) {} // not required
-            auto usage_info = j.at("usageInfo");
-
-            auto put_sensor = usage_info.at("putSensor");
-            if (!put_sensor.empty()) {
-                put_sensor.at("callsTotal").get_to(r.usage_info.putSensor.callsTotal);
-                put_sensor.at("callsThisPeriod").get_to(r.usage_info.putSensor.callsThisPeriod);
-                put_sensor.at("lastCalled").get_to(r.usage_info.putSensor.lastCalled);
-            }
-
-            auto post_config = usage_info.at("postConfig");
-            if (!post_config.empty()) {
-                post_config.at("callsTotal").get_to(r.usage_info.postConfig.callsTotal);
-                post_config.at("callsThisPeriod").get_to(r.usage_info.postConfig.callsThisPeriod);
-                post_config.at("lastCalled").get_to(r.usage_info.postConfig.lastCalled);
-            }
-
-            auto get_sensor = usage_info.at("getSensor");
-            if (!get_sensor.empty()) {
-                get_sensor.at("callsTotal").get_to(r.usage_info.getSensor.callsTotal);
-                get_sensor.at("callsThisPeriod").get_to(r.usage_info.getSensor.callsThisPeriod);
-                get_sensor.at("lastCalled").get_to(r.usage_info.getSensor.lastCalled);
-            }
-
-            auto get_config = usage_info.at("getConfig");
-            if (!get_config.empty()) {
-                get_config.at("callsTotal").get_to(r.usage_info.getConfig.callsTotal);
-                get_config.at("callsThisPeriod").get_to(r.usage_info.getConfig.callsThisPeriod);
-                get_config.at("lastCalled").get_to(r.usage_info.getConfig.lastCalled);
-            }
-
-            auto get_status = usage_info.at("getStatus");
-            if (!get_status.empty()) {
-                get_status.at("callsTotal").get_to(r.usage_info.getStatus.callsTotal);
-                get_status.at("callsThisPeriod").get_to(r.usage_info.getStatus.callsTotal);
-                get_status.at("lastCalled").get_to(r.usage_info.getStatus.lastCalled);
-            }
-
-            auto post_stream = usage_info.at("postStream");
-            if (!post_stream.empty()) {
-                post_stream.at("callsTotal").get_to(r.usage_info.postStream.callsTotal);
-                post_stream.at("callsThisPeriod").get_to(r.usage_info.postStream.callsTotal);
-                post_stream.at("lastCalled").get_to(r.usage_info.postStream.lastCalled);
-                post_stream.at("samplesTotal").get_to(r.usage_info.postStream.samplesTotal);
-                post_stream.at("samplesThisPeriod").get_to(r.usage_info.postStream.samplesThisPeriod);
-            }
-        }
-
-        void dump() {
-            json j;
-            fmt_json(j);
-            std::cout << j.dump(4) << "\n";
-        }
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(get_sensor_response, sensorId, tenantId, label, usageInfo)
+        AMBER_DUMP()
     };
 
     // update_sensor_request
@@ -297,33 +151,18 @@ namespace amber_models {
         std::string label;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(update_sensor_request, label)
+        AMBER_DUMP()
     };
 
     // update_sensor_response
     class update_sensor_response {
     public:
-        std::string label;
-        std::string sensorId;
         std::string tenantId;
+        std::string sensorId;
+        std::string label;
 
-        friend void to_json(json &j, const update_sensor_response &r) {
-            j = json{{"label",    r.label},
-                     {"sensorId", r.sensorId},
-                     {"tenantId", r.tenantId}
-            };
-        }
-
-        friend void from_json(const json &j, update_sensor_response &r) {
-            try { j.at("label").get_to(r.label); } catch (nlohmann::detail::out_of_range) {} // not required
-            j.at("sensorId").get_to(r.sensorId);
-            j.at("tenantId").get_to(r.tenantId);
-        }
-
-        void dump() {
-            json j = json{{"label", label}
-            };
-            std::cout << j.dump(4) << "\n";
-        }
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(update_sensor_response, label, sensorId, tenantId)
+        AMBER_DUMP()
     };
 
     class configure_sensor_request {
@@ -339,6 +178,7 @@ namespace amber_models {
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(configure_sensor_request, featureCount, streamingWindowSize,
                                        samplesToBuffer, learningRateNumerator, learningRateDenominator,
                                        learningMaxClusters, learningMaxSamples)
+        AMBER_DUMP()
     };
 
     class configure_sensor_response {
@@ -354,18 +194,7 @@ namespace amber_models {
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(configure_sensor_response, featureCount, streamingWindowSize,
                                        samplesToBuffer, learningRateNumerator, learningRateDenominator,
                                        learningMaxClusters, learningMaxSamples)
-
-        void dump() {
-            json j = json{{"featureCount",            featureCount},
-                          {"streamingWindowSize",     streamingWindowSize},
-                          {"samplesToBuffer",         samplesToBuffer},
-                          {"learningRateNumerator",   learningRateNumerator},
-                          {"learningRateDenominator", learningRateDenominator},
-                          {"learningMaxClusters",     learningMaxClusters},
-                          {"learningMaxSamples",      learningMaxSamples}
-            };
-            std::cout << j.dump(4) << "\n";
-        }
+        AMBER_DUMP()
     };
 
     class stream_sensor_request {
@@ -373,6 +202,7 @@ namespace amber_models {
         std::string data;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(stream_sensor_request, data)
+        AMBER_DUMP()
     };
 
     class stream_sensor_response {
@@ -392,16 +222,15 @@ namespace amber_models {
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(stream_sensor_response, state, message, progress, clusterCount, retryCount,
                                        streamingWindowSize, ID, SI, AD, AH, AM, AW)
-
-        void dump() {
-            json j = *this;
-            std::cout << j.dump(4) << "\n";
-        }
+        AMBER_DUMP()
     };
 
     struct config_features {
         float minVal;
         float maxVal;
+
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(config_features, minVal, maxVal)
+        AMBER_DUMP()
     };
 
     class get_config_response {
@@ -418,12 +247,8 @@ namespace amber_models {
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(get_config_response, featureCount, streamingWindowSize, samplesToBuffer,
                                        learningRateNumerator, learningRateDenominator, learningMaxClusters,
-                                       learningMaxSamples, percentVariation)
-
-        void dump() {
-            json j = *this;
-            std::cout << j.dump(4) << "\n";
-        }
+                                       learningMaxSamples, percentVariation, features)
+        AMBER_DUMP()
     };
 
     class get_status_response {
@@ -439,11 +264,7 @@ namespace amber_models {
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(get_status_response, pca, clusterGrowth, clusterSizes, anomalyIndexes,
                                        frequencyIndexes, distanceIndexes, totalInferences, numClusters)
-
-        void dump() {
-            json j = *this;
-            std::cout << j.dump(4) << "\n";
-        }
+        AMBER_DUMP()
     };
 };
 
