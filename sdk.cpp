@@ -26,8 +26,11 @@ using json = nlohmann::json;
  *
  */
 amber_sdk::amber_sdk(const char *license_id, const char *license_file) {
-    this->curl = curl_easy_init();
     this->auth_time = 0;
+    this->last_code = 0;
+    this->last_error[0] = '\0';
+    this->expires_in = 0;
+    this->auth_ok = false;
 
     char *env_license_file = getenv("AMBER_LICENSE_FILE");
     char *env_license_id = getenv("AMBER_LICENSE_ID");
@@ -73,92 +76,137 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file) {
     this->license = amber_entry.get<amber_models::license_entry>();
 }
 
-amber_sdk::~amber_sdk() {
-}
+amber_sdk::~amber_sdk() = default;
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
     ((std::string *) userp)->append((char *) contents, size * nmemb);
     return size * nmemb;
 }
 
-amber_models::create_sensor_response amber_sdk::create_sensor(std::string label) {
+bool amber_sdk::create_sensor(amber_models::create_sensor_response &response, std::string &label) {
     amber_models::create_sensor_request request(label);
     json j = request;
     std::string body = j.dump();
-    auto post_response = this->post_request(std::string("/sensor"), std::string(""), body);
-    auto response = post_response.get<amber_models::create_sensor_response>();
-    return response;
+    json json_response;
+    std::string no_sensor;
+    std::string slug = "/sensor";
+    if (this->post_request(slug, no_sensor, body, true, json_response) != 200) {
+        return false;
+    }
+    response = json_response.get<amber_models::create_sensor_response>();
+    return true;
 }
 
-amber_models::configure_sensor_response *
-amber_sdk::configure_sensor(std::string sensor_id, uint16_t feature_count, uint16_t streaming_window_size,
-                            uint32_t samples_to_buffer, uint64_t learning_rate_numerator,
-                            uint32_t learning_rate_denominator, uint16_t learning_max_clusters,
-                            uint64_t learning_max_samples) {
+bool amber_sdk::configure_sensor(amber_models::configure_sensor_response &response, std::string &sensor_id,
+                                 uint16_t feature_count, uint16_t streaming_window_size,
+                                 uint32_t samples_to_buffer, uint64_t learning_rate_numerator,
+                                 uint32_t learning_rate_denominator, uint16_t learning_max_clusters,
+                                 uint64_t learning_max_samples) {
     amber_models::configure_sensor_request request{feature_count, streaming_window_size, samples_to_buffer,
                                                    learning_rate_numerator, learning_rate_denominator,
                                                    learning_max_clusters, learning_max_samples};
     json j = request;
     std::string body = j.dump();
-    auto post_response = this->post_request(std::string("/config"), sensor_id, body);
-    auto response = post_response.get<amber_models::configure_sensor_response>();
-
-    return &response;
-}
-
-amber_models::get_sensor_response *amber_sdk::get_sensor(std::string sensor_id) {
-    auto get_response = this->get_request(std::string("/sensor"), sensor_id);
-    auto response = get_response.get<amber_models::get_sensor_response>();
-    return &response;
-}
-
-amber_models::sensor_list *amber_sdk::list_sensors() {
-    auto response = this->get_request(std::string("/sensors"), "");
-    auto list_response = new amber_models::sensor_list;
-    for (json::iterator it = response.begin(); it != response.end(); ++it) {
-        list_response->push_back(it->get<amber_models::sensor_instance>());
+    json json_response;
+    std::string slug = "/config";
+    if (this->post_request(slug, sensor_id, body, true, json_response) != 200) {
+        return false;
     }
-    return list_response;
+    response = json_response.get<amber_models::configure_sensor_response>();
+    return true;
 }
 
-amber_models::update_sensor_response *amber_sdk::update_sensor(std::string sensor_id, std::string label) {
+bool amber_sdk::get_sensor(amber_models::get_sensor_response &response, std::string &sensor_id) {
+    json json_response;
+    std::string slug = "/sensor";
+    if (this->get_request(slug, sensor_id, json_response) != 200) {
+        return false;
+    }
+    response = json_response.get<amber_models::get_sensor_response>();
+    return true;
+}
+
+bool amber_sdk::list_sensors(amber_models::list_sensors_response &response) {
+    json json_response;
+    std::string no_sensor;
+    std::string slug = "/sensors";
+    if (this->get_request(slug, no_sensor, json_response) != 200) {
+        return false;
+    }
+    response = json_response.get<amber_models::list_sensors_response>();
+    return true;
+}
+
+bool
+amber_sdk::update_sensor(amber_models::update_sensor_response &response, std::string sensor_id, std::string &label) {
     amber_models::update_sensor_request request{label};
     json j = request;
     std::string body = j.dump();
-    auto put_response = this->put_request(std::string("/sensor"), sensor_id, body);
-    auto response = put_response.get<amber_models::update_sensor_response>();
-    return &response;
+    json json_response;
+    std::string slug = "/sensor";
+    if (this->put_request(slug, sensor_id, body, json_response) != 200) {
+        return false;
+    }
+    response = json_response.get<amber_models::update_sensor_response>();
+    return true;
 }
 
-amber_models::delete_sensor_response *amber_sdk::delete_sensor(std::string sensor_id) {
-    return NULL;
+bool amber_sdk::delete_sensor(std::string &sensor_id) {
+    json json_response;
+    std::string slug = "/sensor";
+    return this->delete_request(slug, sensor_id, json_response) == 200;
 }
 
-amber_models::stream_sensor_response *amber_sdk::stream_sensor(std::string sensor_id, std::string csvdata) {
-    return NULL;
+bool
+amber_sdk::stream_sensor(amber_models::stream_sensor_response &response, std::string &sensor_id, std::string &csvdata) {
+    amber_models::stream_sensor_request request{csvdata};
+    json j = request;
+    std::string body = j.dump();
+    json json_response;
+    std::string slug = "/stream";
+    if (this->post_request(slug, sensor_id, body, true, json_response) != 200) {
+        return false;
+    }
+    response = json_response.get<amber_models::stream_sensor_response>();
+    return true;
 }
 
-amber_models::get_config_response *amber_sdk::get_config(std::string sensor_id) {
-    return NULL;
+bool amber_sdk::get_config(amber_models::get_config_response &response, std::string &sensor_id) {
+    json json_response;
+    std::string slug = "/config";
+    if (this->get_request(slug, sensor_id, json_response) != 200) {
+        return false;
+    }
+    response = json_response.get<amber_models::get_config_response>();
+    return true;
 }
 
-amber_models::get_status_response *amber_sdk::get_status(std::string sensor_id) {
-    return NULL;
+bool amber_sdk::get_status(amber_models::get_status_response &response, std::string &sensor_id) {
+    json json_response;
+    std::string slug = "/status";
+    if (this->get_request(slug, sensor_id, json_response) != 200) {
+        return false;
+    }
+    response = json_response.get<amber_models::get_status_response>();
+    return true;
 }
 
-json amber_sdk::get_request(std::string slug, std::string sensor_id) {
-    this->authenticate();
+int amber_sdk::get_request(std::string &slug, std::string &sensor_id, json &response) {
+
+    reset_last_message();
+    if (!this->authenticate(response)) {
+        return this->last_code;
+    }
     CURL *curl;
-    CURLcode res;
     curl = curl_easy_init();
 
     std::string read_buffer;
     std::string url = this->license.server + slug;
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    struct curl_slist *hs = NULL;
+    struct curl_slist *hs = nullptr;
     hs = curl_slist_append(hs, "Content-Type: application/json");
     hs = curl_slist_append(hs, this->auth_bear_header.c_str());
-    if (sensor_id != "") {
+    if (!sensor_id.empty()) {
         auto sensor_header = std::string("sensorId:" + sensor_id);
         hs = curl_slist_append(hs, sensor_header.c_str());
     }
@@ -166,40 +214,42 @@ json amber_sdk::get_request(std::string slug, std::string sensor_id) {
     curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, this->last_error);
 
-    // send request
-    res = curl_easy_perform(curl);
+    // send auth request and process result
+    this->last_code = curl_easy_perform(curl);
     curl_slist_free_all(hs);
-    if (res != CURLE_OK) {
-        curl_easy_cleanup(curl);
-        fprintf(stderr, "%s\n\n", curl_easy_strerror(res));
-        return NULL;
+    if (this->last_code == CURLE_OK) {
+        // libcurl is successful, process http code
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &this->last_code);
+        response = json::parse(read_buffer);
     }
-
     curl_easy_cleanup(curl);
-
-    json response = json::parse(read_buffer);
-    return response;
+    return this->last_code;
 }
 
-json amber_sdk::post_request(std::string slug, std::string sensor_id, std::string body, bool do_auth) {
+int
+amber_sdk::post_request(std::string &slug, std::string &sensor_id, std::string &body, bool do_auth, json &response) {
+
+    reset_last_message();
     if (do_auth) {
-        this->authenticate();
+        if (!this->authenticate(response)) {
+            return this->last_code;
+        }
     }
     CURL *curl;
-    CURLcode res;
     curl = curl_easy_init();
 
     // set up request
     std::string read_buffer;
     std::string url = this->license.server + slug;
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    struct curl_slist *hs = NULL;
+    struct curl_slist *hs = nullptr;
     hs = curl_slist_append(hs, "Content-Type: application/json");
     if (do_auth) {
         hs = curl_slist_append(hs, this->auth_bear_header.c_str());
     }
-    if (sensor_id != "") {
+    if (!sensor_id.empty()) {
         auto sensor_header = std::string("sensorId:" + sensor_id);
         hs = curl_slist_append(hs, sensor_header.c_str());
     }
@@ -208,35 +258,43 @@ json amber_sdk::post_request(std::string slug, std::string sensor_id, std::strin
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, body.length());
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, this->last_error);
 
-    // send auth request
-    res = curl_easy_perform(curl);
+    // send auth request and process result
+    this->last_code = curl_easy_perform(curl);
     curl_slist_free_all(hs);
-    if (res != CURLE_OK) {
-        curl_easy_cleanup(curl);
-        fprintf(stderr, "%s\n\n", curl_easy_strerror(res));
-        return NULL;
+    if (this->last_code == CURLE_OK) {
+        // libcurl is successful, process http code
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &this->last_code);
+        if (this->last_code >= 200 && this->last_code < 300) {
+            // success
+            response = json::parse(read_buffer);
+        } else {
+            // obtain error message
+        }
     }
-
     curl_easy_cleanup(curl);
-    json response = json::parse(read_buffer);
-
-    return response;
+    return this->last_code;
 }
 
-json amber_sdk::put_request(std::string slug, std::string sensor_id, std::string body) {
+int amber_sdk::put_request(std::string &slug, std::string &sensor_id, std::string &body, json &response) {
+
+    reset_last_message();
+    if (!this->authenticate(response)) {
+        return this->last_code;
+    }
+
     CURL *curl;
-    CURLcode res;
     curl = curl_easy_init();
 
     // set up request
     std::string read_buffer;
     std::string url = this->license.server + slug;
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    struct curl_slist *hs = NULL;
+    struct curl_slist *hs = nullptr;
     hs = curl_slist_append(hs, "Content-Type: application/json");
     hs = curl_slist_append(hs, this->auth_bear_header.c_str());
-    if (sensor_id != "") {
+    if (!sensor_id.empty()) {
         auto sensor_header = std::string("sensorId:" + sensor_id);
         hs = curl_slist_append(hs, sensor_header.c_str());
     }
@@ -245,19 +303,64 @@ json amber_sdk::put_request(std::string slug, std::string sensor_id, std::string
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, this->last_error);
 
-    res = curl_easy_perform(curl);
+    // send auth request and process result
+    this->last_code = curl_easy_perform(curl);
     curl_slist_free_all(hs);
-    if (res != CURLE_OK) {
-        curl_easy_cleanup(curl);
-        fprintf(stderr, "%s\n\n", curl_easy_strerror(res));
-        return NULL;
+    if (this->last_code == CURLE_OK) {
+        // libcurl is successful, process http code
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &this->last_code);
+        if (this->last_code >= 200 && this->last_code < 300) {
+            // success
+            response = json::parse(read_buffer);
+        } else {
+            // obtain error message
+        }
+    }
+    curl_easy_cleanup(curl);
+    return this->last_code;
+}
+
+int amber_sdk::delete_request(std::string &slug, std::string &sensor_id, json &response) {
+
+    reset_last_message();
+    if (this->authenticate(response)) {
+        return this->last_code;
     }
 
-    curl_easy_cleanup(curl);
-    json response = json::parse(read_buffer);
+    CURL *curl;
+    curl = curl_easy_init();
 
-    return response;
+    // set up request
+    std::string read_buffer;
+    std::string url = this->license.server + slug;
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    struct curl_slist *hs = nullptr;
+    hs = curl_slist_append(hs, "Content-Type: application/json");
+    hs = curl_slist_append(hs, this->auth_bear_header.c_str());
+    auto sensor_header = std::string("sensorId:" + sensor_id);
+    hs = curl_slist_append(hs, sensor_header.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, this->last_error);
+
+    // send auth request and process result
+    this->last_code = curl_easy_perform(curl);
+    if (this->last_code == CURLE_OK) {
+        // libcurl is successful, process http code
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &this->last_code);
+        if (this->last_code >= 200 && this->last_code < 300) {
+            // success
+            response = json::parse(read_buffer);
+        } else {
+            // obtain error message
+        }
+    }
+    curl_easy_cleanup(curl);
+    return this->last_code;
 }
 
 /**
@@ -266,12 +369,13 @@ json amber_sdk::put_request(std::string slug, std::string sensor_id, std::string
   valid for one hour and is used to authenticate all other API requests.
  * @return
  */
-bool amber_sdk::authenticate() {
+bool amber_sdk::authenticate(json &response) {
 
-    // note: we can't use
-    if (std::time(nullptr) + this->expires_in - 100 < this->auth_time) {
+    if (auth_ok && std::time(nullptr) + this->expires_in - 100 < this->auth_time) {
+        // auth token is still good
         return true;
     }
+    this->auth_ok = false;
 
     // create request body
     amber_models::auth_request request{this->license.username, this->license.password};
@@ -279,11 +383,18 @@ bool amber_sdk::authenticate() {
     std::string body = j.dump();
 
     // post request
-    auto response = this->post_request(std::string("/oauth2"), std::string(""), body, false /* do_auth=false */);
+    std::string no_sensor;
+    std::string slug = "/oauth2";
+    this->last_code = this->post_request(slug, no_sensor, body, false, response);
+    if (this->last_code != 200) {
+        // client-side issue
+        return false;
+    }
+    this->auth_ok = true;
 
     // process response
     this->auth = response.get<amber_models::auth_response>();
-    this->expires_in = std::stoul (this->auth.expiresIn, nullptr, 0);
+    this->expires_in = std::stoul(this->auth.expiresIn, nullptr, 0);
     this->auth_time = std::time(nullptr) + this->expires_in;
     this->auth_bear_header = std::string("Authorization: Bearer " + this->auth.idToken);
 
