@@ -1,12 +1,12 @@
-#ifndef AMBER_CPP_SDK_SDK_H
-#define AMBER_CPP_SDK_SDK_H
+#ifndef AMBER_CPP_SDK_AMBER_SDK_H
+#define AMBER_CPP_SDK_AMBER_SDK_H
 
 #include <curl/curl.h>
 #include <string>
 #include <ctime>
 #include <exception>
 #include "nlohmann/json.hpp"
-#include "models.h"
+#include "amber_models.h"
 
 using json = nlohmann::json;
 
@@ -82,4 +82,4 @@ private:
     std::string auth_bear_header;
 };
 
-#endif // AMBER_CPP_SDK_SDK_H
+#endif // AMBER_CPP_SDK_AMBER_SDK_H

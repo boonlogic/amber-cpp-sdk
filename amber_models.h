@@ -1,5 +1,5 @@
-#ifndef AMBER_CPP_SDK_MODELS_H
-#define AMBER_CPP_SDK_MODELS_H
+#ifndef AMBER_CPP_SDK_AMBER_MODELS_H
+#define AMBER_CPP_SDK_AMBER_MODELS_H
 
 #include <string>
 #include <iostream>
@@ -268,4 +268,4 @@ namespace amber_models {
     };
 };
 
-#endif //AMBER_CPP_SDK_MODELS_H
+#endif //AMBER_CPP_SDK_AMBER_MODELS_H
