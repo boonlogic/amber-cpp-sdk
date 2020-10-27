@@ -68,7 +68,7 @@ The following provides and example of each amber-cpp-sdk method.
 
 The following will process a CSV file using batch-style streaming requests.  Full Amber analytic results will be displayed after each streaming request.  
 
-[stream-advanced.cpp](examples/stream-advanced.cpp)<br>
+[stream-advanced.cpp](examples/stream_advanced.cpp)<br>
 [output_current.csv](examples/output_current.csv)
 
 ```c++
