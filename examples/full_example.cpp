@@ -3,20 +3,24 @@
 
 int main(int argc, char *argv[]) {
 
-    std::string my_sensor = "00456a69350f72b1";
+    std::string my_sensor;
 
     amber_sdk *sdk = new amber_sdk();
 
-#if 1
-    std::string sensor_label = "fancy-sensor-6";
-    amber_models::create_sensor_response create_sensor_response;
-    if (sdk->create_sensor(create_sensor_response, sensor_label)) {
-        create_sensor_response.dump();
-        my_sensor = create_sensor_response.sensorId;
+    if (argc > 1) {
+        // use sensor specified as argument
+        my_sensor = argv[1];
     } else {
-        std::cout << "error: " << sdk->last_error << "\n";
+        // no sensor specified, create one
+        std::string sensor_label = "fancy-sensor-6";
+        amber_models::create_sensor_response create_sensor_response;
+        if (sdk->create_sensor(create_sensor_response, sensor_label)) {
+            create_sensor_response.dump();
+            my_sensor = create_sensor_response.sensorId;
+        } else {
+            std::cout << "error: " << sdk->last_error << "\n";
+        }
     }
-#endif
 
     // list all sensors
     amber_models::list_sensors_response list_sensors_response;
@@ -36,8 +40,8 @@ int main(int argc, char *argv[]) {
 
     // update a sensor
     amber_models::update_sensor_response update_sensor_response;
-    sensor_label = "fancy-sensor-7";
-    if (sdk->update_sensor(update_sensor_response, my_sensor, sensor_label)) {
+    std::string new_label = "fancy-sensor-7";
+    if (sdk->update_sensor(update_sensor_response, my_sensor, new_label)) {
         update_sensor_response.dump();
     } else {
         std::cout << "error: " << sdk->last_error << "\n";
@@ -81,4 +85,3 @@ int main(int argc, char *argv[]) {
         std::cout << "error: " << sdk->last_error << "\n";
     }
 }
-
