@@ -5,6 +5,8 @@
 
 using json = nlohmann::json;
 
+const char* user_agent = "User-Agent: amber-cpp-sdk";
+
 /**
  * Main client which interfaces with the Amber cloud. Amber account
  * credentials are discovered within a .Amber.license file located in the
@@ -206,6 +208,7 @@ int amber_sdk::get_request(std::string &slug, std::string &sensor_id, json &resp
     struct curl_slist *hs = nullptr;
     hs = curl_slist_append(hs, "Content-Type: application/json");
     hs = curl_slist_append(hs, this->auth_bear_header.c_str());
+    hs = curl_slist_append(hs, user_agent);
     if (!sensor_id.empty()) {
         auto sensor_header = std::string("sensorId:" + sensor_id);
         hs = curl_slist_append(hs, sensor_header.c_str());
@@ -257,6 +260,7 @@ amber_sdk::post_request(std::string &slug, std::string &sensor_id, std::string &
     if (do_auth) {
         hs = curl_slist_append(hs, this->auth_bear_header.c_str());
     }
+    hs = curl_slist_append(hs, user_agent);
     if (!sensor_id.empty()) {
         auto sensor_header = std::string("sensorId:" + sensor_id);
         hs = curl_slist_append(hs, sensor_header.c_str());
@@ -305,6 +309,7 @@ int amber_sdk::put_request(std::string &slug, std::string &sensor_id, std::strin
     struct curl_slist *hs = nullptr;
     hs = curl_slist_append(hs, "Content-Type: application/json");
     hs = curl_slist_append(hs, this->auth_bear_header.c_str());
+    hs = curl_slist_append(hs, user_agent);
     if (!sensor_id.empty()) {
         auto sensor_header = std::string("sensorId:" + sensor_id);
         hs = curl_slist_append(hs, sensor_header.c_str());
@@ -353,6 +358,7 @@ int amber_sdk::delete_request(std::string &slug, std::string &sensor_id, json &r
     struct curl_slist *hs = nullptr;
     hs = curl_slist_append(hs, "Content-Type: application/json");
     hs = curl_slist_append(hs, this->auth_bear_header.c_str());
+    hs = curl_slist_append(hs, user_agent);
     auto sensor_header = std::string("sensorId:" + sensor_id);
     hs = curl_slist_append(hs, sensor_header.c_str());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
