@@ -69,7 +69,7 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file) {
 
     // locate license entry in license file
     json::iterator it = license_json.find(license_id);
-    if (it->empty()) {
+    if (it == license_json.end()) {
         throw amber_except("license_id '%s' not found in '%s'", license_id, license_file);
     }
 
