@@ -3,6 +3,7 @@ project(ambersdk)
 set(CMAKE_CXX_STANDARD 14)
 
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 include_directories(include json-3.9.1/single_include)
 
