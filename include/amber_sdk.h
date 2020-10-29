@@ -2,6 +2,7 @@
 #define AMBER_CPP_SDK_AMBER_SDK_H
 
 #include <curl/curl.h>
+#include <stdarg.h>
 #include <string>
 #include <ctime>
 #include <exception>
@@ -16,7 +17,6 @@ public:
         va_list args;
         va_start (args, fmt);
         vsprintf(this->buffer, fmt, args);
-        perror(this->buffer);
         va_end (args);
     };
 

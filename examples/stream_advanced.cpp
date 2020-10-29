@@ -9,7 +9,14 @@ int main(int argc, char *argv[]) {
 
     std::string my_sensor;
 
-    amber_sdk *sdk = new amber_sdk();
+    // set up handler
+    amber_sdk *sdk;
+    try {
+        sdk = new amber_sdk();
+    } catch (amber_except &e) {
+        std::cout << e.what() << "\n";
+        exit(1);
+    }
 
     if (argc > 1) {
         // use sensor specified as argument

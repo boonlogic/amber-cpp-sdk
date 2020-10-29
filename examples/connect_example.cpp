@@ -4,7 +4,13 @@
 int main(int argc, char *argv[]) {
 
     // set up handler
-    amber_sdk *sdk = new amber_sdk();
+    amber_sdk *sdk;
+    try {
+        sdk = new amber_sdk();
+    } catch (amber_except &e) {
+        std::cout << e.what() << "\n";
+        exit(1);
+    }
 
     // list all sensors
     amber_models::list_sensors_response list_sensors_response;
