@@ -13,20 +13,23 @@ The Boon Amber C++ SDK is a source-only distribution.
 amber-cpp-sdk uses libcurl to send and receive http requests.  This must be installed on the host system before building amber-cpp-sdk.
 
 A full detail of curl installation options can be found at:
-https://curl.haxx.se/download.html
+[https://curl.haxx.se/download.html](https://curl.haxx.se/download.html])
 
 Clone source:
-```
+
+```bash
 git clone git@github.com/boonlogic/amber-cpp-sdk.git
 ```
 
 Within amber-cpp-sdk repository, create makefiles:
-```
+
+```bash
 cmake .
 ```
 
 Make libraries and supporting example scripts:
-```
+
+```bash
 make
 ```
 
