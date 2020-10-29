@@ -50,7 +50,7 @@ The username and password should be placed in a file named _~/.Amber.license_ wh
 }
 ```
 
-The _~/.Amber.license_ file will be consulted by the Amber SDK to find and authenticate your account credentials with the Amber server. Credentials may optionally be provided instead via the environment variables `AMBER_USERNAME` and `AMBER_PASSWORD`.
+The ~/.Amber.license file will be consulted by the Amber SDK to find and authenticate your account credentials with the Amber server. Credentials may optionally be provided instead via the environment variables `AMBER_USERNAME` and `AMBER_PASSWORD`.
 
 ## Connectivity test
 
@@ -58,26 +58,21 @@ The following example provides a basic proof-of-connectivity:
 
 [connect-example.cpp](examples/connect-example.cpp)
 
-```c++
-```
-
 Running the connect-example.cpp example should yield output like the following:
 ```
-$ cmake connect_example
-sensors: {}
+$ bin/connect-example
+{}
 ```
 where the dictionary `{}` lists all sensors that currently exist under the given Boon Amber account.
 
 ## Full Example
-
-The following provides and example of each amber-cpp-sdk method.
-
 [full-example.cpp](examples/full-example.py)
 
-```c++
+The following provides and example of each amber-cpp-sdk method.
 ```
-
-
+$ bin/full-example
+{}
+```
 ## Advanced CSV file processor
 
 The following will process a CSV file using batch-style streaming requests.  Full Amber analytic results will be displayed after each streaming request.  
@@ -85,12 +80,9 @@ The following will process a CSV file using batch-style streaming requests.  Ful
 [stream-advanced.cpp](examples/stream_advanced.cpp)<br>
 [output_current.csv](examples/output_current.csv)
 
-```c++
 ```
-
-### Sample output:
-
-```
+$ bin/stream-advanced
+{}
 State: Monitoring(0%), inferences: 20201, clusters: 247, samples: 20275, duration: 228.852
 ID: 29,30,31,32,33,34,35,36,37,38,39,245,41,42,219,44,45,220,47,48,49,50,51,52,1 
 SI: 306,307,307,307,307,307,307,308,308,308,308,308,309,311,315,322,336,364,421,532,350,393,478,345,382 
