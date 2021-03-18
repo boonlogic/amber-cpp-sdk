@@ -14,6 +14,7 @@ const char* user_agent = "User-Agent: amber-cpp-sdk";
  *
  * @param license_id: license identifier label found within .Amber.license file
  * @param license_file: path to .Amber.license file
+ * @param verify_cert: whether to verify the server certificate or not
  *
  * Environment:
  *   AMBER_LICENSE_FILE: sets license_file path
@@ -26,8 +27,10 @@ const char* user_agent = "User-Agent: amber-cpp-sdk";
  *
  *   AMBER_SERVER: overrides the server as found in .Amber.license file
  *
+ *   AMBER_CERTIFICATE: local certificate to verify the server certificate
+ *
  */
-amber_sdk::amber_sdk(const char *license_id, const char *license_file) {
+amber_sdk::amber_sdk(const char *license_id, const char *license_file, bool verify_cert) {
     this->auth_time = 0;
     this->last_code = 0;
     this->last_error[0] = '\0';
@@ -39,6 +42,13 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file) {
     char *env_username = getenv("AMBER_USERNAME");
     char *env_password = getenv("AMBER_PASSWORD");
     char *env_server = getenv("AMBER_SERVER");
+    char *env_verify = getenv("AMBER_CERTIFICATE_VERIFY");
+
+    if (env_verify) {
+        this->certificate.verify = ! (strcasecmp("false", env_verify) == 0);
+    } else {
+        this->certificate.verify = verify_cert;
+    }
 
     // if username, password and server are all specified via environment, we're done here
     if (env_username && env_password && env_server) {
@@ -193,6 +203,16 @@ bool amber_sdk::get_status(amber_models::get_status_response &response, std::str
     return true;
 }
 
+void amber_sdk::common_curl_opts(CURL *curl, std::string &url, struct curl_slist *hs, std::string *rbufptr) {
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, rbufptr);
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, this->last_error);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, this->certificate.verify ? 1 : 0);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, this->certificate.verify ? 1 : 0);
+}
+
 int amber_sdk::get_request(std::string &slug, std::string &sensor_id, json &response) {
 
     reset_last_message();
@@ -204,7 +224,6 @@ int amber_sdk::get_request(std::string &slug, std::string &sensor_id, json &resp
 
     std::string read_buffer;
     std::string url = this->license.server + slug;
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     struct curl_slist *hs = nullptr;
     hs = curl_slist_append(hs, "Content-Type: application/json");
     hs = curl_slist_append(hs, this->auth_bear_header.c_str());
@@ -213,11 +232,8 @@ int amber_sdk::get_request(std::string &slug, std::string &sensor_id, json &resp
         auto sensor_header = std::string("sensorId:" + sensor_id);
         hs = curl_slist_append(hs, sensor_header.c_str());
     }
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
+    common_curl_opts(curl, url, hs, &read_buffer);
     curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
-    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, this->last_error);
 
     // send auth request and process result
     this->last_code = curl_easy_perform(curl);
@@ -254,7 +270,6 @@ amber_sdk::post_request(std::string &slug, std::string &sensor_id, std::string &
     // set up request
     std::string read_buffer;
     std::string url = this->license.server + slug;
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     struct curl_slist *hs = nullptr;
     hs = curl_slist_append(hs, "Content-Type: application/json");
     if (do_auth) {
@@ -265,12 +280,9 @@ amber_sdk::post_request(std::string &slug, std::string &sensor_id, std::string &
         auto sensor_header = std::string("sensorId:" + sensor_id);
         hs = curl_slist_append(hs, sensor_header.c_str());
     }
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
+    common_curl_opts(curl, url, hs, &read_buffer);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, body.length());
-    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, this->last_error);
 
     // send auth request and process result
     this->last_code = curl_easy_perform(curl);
@@ -305,7 +317,6 @@ int amber_sdk::put_request(std::string &slug, std::string &sensor_id, std::strin
     // set up request
     std::string read_buffer;
     std::string url = this->license.server + slug;
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     struct curl_slist *hs = nullptr;
     hs = curl_slist_append(hs, "Content-Type: application/json");
     hs = curl_slist_append(hs, this->auth_bear_header.c_str());
@@ -314,12 +325,9 @@ int amber_sdk::put_request(std::string &slug, std::string &sensor_id, std::strin
         auto sensor_header = std::string("sensorId:" + sensor_id);
         hs = curl_slist_append(hs, sensor_header.c_str());
     }
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
+    common_curl_opts(curl, url, hs, &read_buffer);
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
-    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, this->last_error);
 
     // send auth request and process result
     this->last_code = curl_easy_perform(curl);
@@ -354,18 +362,14 @@ int amber_sdk::delete_request(std::string &slug, std::string &sensor_id, json &r
     // set up request
     std::string read_buffer;
     std::string url = this->license.server + slug;
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     struct curl_slist *hs = nullptr;
     hs = curl_slist_append(hs, "Content-Type: application/json");
     hs = curl_slist_append(hs, this->auth_bear_header.c_str());
     hs = curl_slist_append(hs, user_agent);
     auto sensor_header = std::string("sensorId:" + sensor_id);
     hs = curl_slist_append(hs, sensor_header.c_str());
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
+    common_curl_opts(curl, url, hs, &read_buffer);
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
-    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, this->last_error);
 
     // send auth request and process result
     this->last_code = curl_easy_perform(curl);

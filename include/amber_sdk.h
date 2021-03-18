@@ -29,9 +29,11 @@ public:
 
 class amber_sdk {
 public:
-    amber_sdk(const char *license_id = "default", const char *license_file = "~/.Amber.license");
+    amber_sdk(const char *license_id = "default", const char *license_file = "~/.Amber.license", bool verify_cert = true);
 
     ~amber_sdk();
+
+    void verify_certificate(bool verify_cert) { certificate.verify = verify_cert; }
 
     bool create_sensor(amber_models::create_sensor_response &response, std::string &label);
 
@@ -64,6 +66,8 @@ public:
     }
 
 private:
+    void common_curl_opts(CURL *curl, std::string &url, struct curl_slist *hs, std::string *rbufptr);
+
     bool authenticate(json &response);
 
     int get_request(std::string &slug, std::string &sensor_id, json &response);
@@ -80,6 +84,11 @@ private:
     bool auth_ok;
     std::time_t auth_time;
     std::string auth_bear_header;
+
+    // certificate options
+    struct {
+        bool verify;
+    } certificate;
 };
 
 #endif // AMBER_CPP_SDK_AMBER_SDK_H
