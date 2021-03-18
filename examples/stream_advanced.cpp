@@ -7,6 +7,7 @@
 
 int main(int argc, char *argv[]) {
 
+    bool sensor_created = false;
     std::string my_sensor;
 
     bool verify = true;
@@ -47,6 +48,7 @@ int main(int argc, char *argv[]) {
         if (sdk->create_sensor(create_sensor_response, sensor_label)) {
             create_sensor_response.dump();
             my_sensor = create_sensor_response.sensorId;
+            sensor_created = true;
         } else {
             std::cout << "error: " << sdk->last_error << "\n";
         }
@@ -99,7 +101,7 @@ int main(int argc, char *argv[]) {
     }
 
     // delete a sensor
-    if (!sdk->delete_sensor(my_sensor)) {
+    if (sensor_created && !sdk->delete_sensor(my_sensor)) {
         std::cout << "error: " << sdk->last_error << "\n";
     }
 }
