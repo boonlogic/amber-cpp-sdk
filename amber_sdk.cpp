@@ -27,7 +27,7 @@ const char* user_agent = "User-Agent: amber-cpp-sdk";
  *
  *   AMBER_SERVER: overrides the server as found in .Amber.license file
  *
- *   AMBER_CERTIFICATE: local certificate to verify the server certificate
+ *   AMBER_CERTIFICATE_VERIFY: verify the server certificate
  *
  */
 amber_sdk::amber_sdk(const char *license_id, const char *license_file, bool verify_cert) {
