@@ -21,8 +21,8 @@ int main(int argc, char *argv[]) {
         if (strcasecmp("noverify", str.c_str()) == 0) {
             verify = false;
         } else if (strcasecmp("help", str.c_str()) == 0) {
-                std::cout << "usage: " << argv[0] << " [--noverify] <sensorID>\n";
-                exit(1);
+            std::cout << "usage: " << argv[0] << " [--noverify] <sensorID>\n";
+            exit(1);
         } else if (my_sensor.empty()) {
             my_sensor = str;
         } else {
