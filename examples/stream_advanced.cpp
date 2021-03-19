@@ -5,6 +5,11 @@
 #include <sstream>
 #include <string>
 
+void message_and_exit(char *last_error) {
+    std::cout << "error: " << last_error << "\n";
+    exit(1);
+}
+
 int main(int argc, char *argv[]) {
 
     bool sensor_created = false;
@@ -20,14 +25,23 @@ int main(int argc, char *argv[]) {
 
         if (strcasecmp("noverify", str.c_str()) == 0) {
             verify = false;
-        } else if (strcasecmp("help", str.c_str()) == 0) {
-            std::cout << "usage: " << argv[0] << " [--noverify] <sensorID>\n";
-            exit(1);
-        } else if (my_sensor.empty()) {
-            my_sensor = str;
         } else {
-            std::cout << "error: unknown argument '" << str << "'\n";
-            exit(1);
+            bool help = false;
+            if (strcasecmp("help", str.c_str()) == 0) {
+                help = true;
+            }
+            if (! help) {
+                if (my_sensor.empty()) {
+                    my_sensor = str;
+                } else {
+                    help = true;
+                    std::cout << "error: unknown argument '" << str << "'\n";
+                }
+            }
+            if (help) {
+                std::cout << "usage: " << argv[0] << " [--noverify] <sensorID>\n";
+                exit(1);
+            }
         }
     }
 
@@ -50,7 +64,7 @@ int main(int argc, char *argv[]) {
             my_sensor = create_sensor_response.sensorId;
             sensor_created = true;
         } else {
-            std::cout << "error: " << sdk->last_error << "\n";
+            message_and_exit(sdk->last_error);
         }
     }
 
@@ -59,7 +73,7 @@ int main(int argc, char *argv[]) {
     if (sdk->configure_sensor(configure_sensor_response, my_sensor, 1, 25)) {
         configure_sensor_response.dump();
     } else {
-        std::cout << "error: " << sdk->last_error << "\n";
+        message_and_exit(sdk->last_error);
     }
 
     std::ifstream in("examples/output_current.csv");
@@ -96,12 +110,12 @@ int main(int argc, char *argv[]) {
         if (sdk->stream_sensor(stream_sensor_response, my_sensor, csv_data)) {
             stream_sensor_response.dump();
         } else {
-            std::cout << "error: " << sdk->last_error << "\n";
+            message_and_exit(sdk->last_error);
         }
     }
 
     // delete a sensor
     if (sensor_created && !sdk->delete_sensor(my_sensor)) {
-        std::cout << "error: " << sdk->last_error << "\n";
+        message_and_exit(sdk->last_error);
     }
 }

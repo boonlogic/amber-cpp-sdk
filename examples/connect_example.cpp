@@ -14,11 +14,10 @@ int main(int argc, char *argv[]) {
         if (strcasecmp("noverify", str.c_str()) == 0) {
             verify = false;
         } else {
-            if (strcasecmp("help", str.c_str()) == 0) {
-                std::cout << "usage: " << argv[0] << " [--noverify]\n";
-            } else {
+            if (strcasecmp("help", str.c_str()) != 0) {
                 std::cout << "error: unknown argument '" << str << "'\n";
             }
+            std::cout << "usage: " << argv[0] << " [--noverify]\n";
             exit(1);
         }
     }
