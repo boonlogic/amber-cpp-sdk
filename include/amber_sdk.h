@@ -29,7 +29,7 @@ public:
 
 class amber_sdk {
 public:
-    amber_sdk(const char *license_id = "default", const char *license_file = "~/.Amber.license", bool verify_cert = true, const char *cert = NULL, const char *capath = NULL);
+    amber_sdk(const char *license_id = "default", const char *license_file = "~/.Amber.license", bool verify_cert = true, const char *cert = NULL, const char *cainfo = NULL);
 
     ~amber_sdk();
 
@@ -37,7 +37,7 @@ public:
 
     void set_cert(const char *cert) { ssl.cert = std::string(cert ? cert : ""); }
 
-    void set_capath(const char *capath) { ssl.capath = std::string(capath ? capath : ""); }
+    void set_cainfo(const char *cainfo) { ssl.cainfo = std::string(cainfo ? cainfo : ""); }
 
     bool create_sensor(amber_models::create_sensor_response &response, std::string &label);
 
@@ -93,7 +93,7 @@ private:
     struct {
         bool verify;
         std::string cert;
-        std::string capath;
+        std::string cainfo;
     } ssl;
 };
 

@@ -5,7 +5,7 @@ int main(int argc, char *argv[]) {
 
     bool verify = true;
     char *cert = NULL;
-    char *capath = NULL;
+    char *cainfo = NULL;
 
     for (int arg = 1 ; arg < argc ; arg++) {
         std::string str(argv[arg]);
@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
 
         #define OPT_VERIFY "noverify"
         #define OPT_CERT   "cert="
-        #define OPT_CAPATH "capath="
+        #define OPT_CAPATH "cainfo="
 
         if (strcasecmp(OPT_VERIFY, str.c_str()) == 0) {
             verify = false;
@@ -24,12 +24,12 @@ int main(int argc, char *argv[]) {
             cert = strdup(s);
         } else if (strncasecmp(OPT_CAPATH, str.c_str(), strlen(OPT_CAPATH)) == 0) {
             char *s = (char *)str.c_str() + strlen(OPT_CAPATH);
-            capath = strdup(s);
+            cainfo = strdup(s);
         } else {
             if (strcasecmp("help", str.c_str()) != 0) {
                 std::cout << "error: unknown argument '" << str << "'\n";
             }
-            std::cout << "usage: " << argv[0] << " [--" << OPT_VERIFY << "] [--" << OPT_CERT << "<certificate>] [--" << OPT_CAPATH << "<capath>]\n";
+            std::cout << "usage: " << argv[0] << " [--" << OPT_VERIFY << "] [--" << OPT_CERT << "<certificate>] [--" << OPT_CAPATH << "<cainfo>]\n";
             exit(1);
         }
     }
@@ -41,8 +41,8 @@ int main(int argc, char *argv[]) {
         if (verify == false) {
             sdk->verify_certificate(verify);
         }
-        if (capath != NULL) {
-            sdk->set_capath(capath);
+        if (cainfo != NULL) {
+            sdk->set_cainfo(cainfo);
         }
         if (cert != NULL) {
             sdk->set_cert(cert);

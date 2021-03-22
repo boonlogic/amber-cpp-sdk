@@ -15,6 +15,8 @@ const char* user_agent = "User-Agent: amber-cpp-sdk";
  * @param license_id: license identifier label found within .Amber.license file
  * @param license_file: path to .Amber.license file
  * @param verify_cert: whether to verify the ssl certificate or not
+ * @param cert: file name of your client certificate
+ * @param cainfo: a file holding one or more certificates to verify the peer with
  *
  * Environment:
  *   AMBER_LICENSE_FILE: sets license_file path
@@ -32,7 +34,7 @@ const char* user_agent = "User-Agent: amber-cpp-sdk";
  *   AMBER_SSL_VERIFY: Either a boolean, in which case it controls whether we verify the server’s TLS certificate, or a string, in which case it must be a path to a CA bundle to use
  *
  */
-amber_sdk::amber_sdk(const char *license_id, const char *license_file, bool verify_cert, const char *cert, const char *capath) {
+amber_sdk::amber_sdk(const char *license_id, const char *license_file, bool verify_cert, const char *cert, const char *cainfo) {
     this->auth_time = 0;
     this->last_code = 0;
     this->last_error[0] = '\0';
@@ -53,15 +55,15 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file, bool veri
 
     // verification initialize
     this->verify_certificate(verify_cert);
-    this->set_capath(capath);
+    this->set_cainfo(cainfo);
     // verification override via env variable?
     if (env_verify) {
         this->verify_certificate(true);
         if (strcasecmp("false", env_verify) == 0) {
             this->verify_certificate(false);
-            this->set_capath("");
+            this->set_cainfo("");
         } else if (strcasecmp("true", env_verify) != 0) {
-            this->set_capath(env_verify);
+            this->set_cainfo(env_verify);
         }
     }
 
@@ -230,8 +232,8 @@ void amber_sdk::common_curl_opts(CURL *curl, std::string &url, struct curl_slist
         if (this->ssl.cert.empty() == false) {
             curl_easy_setopt(curl, CURLOPT_SSLCERT, this->ssl.cert.c_str());
         }
-        if (this->ssl.capath.empty() == false) {
-            curl_easy_setopt(curl, CURLOPT_CAINFO, this->ssl.capath.c_str());
+        if (this->ssl.cainfo.empty() == false) {
+            curl_easy_setopt(curl, CURLOPT_CAINFO, this->ssl.cainfo.c_str());
         }
     }
 }
