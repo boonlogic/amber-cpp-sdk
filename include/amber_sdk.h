@@ -29,11 +29,15 @@ public:
 
 class amber_sdk {
 public:
-    amber_sdk(const char *license_id = "default", const char *license_file = "~/.Amber.license", bool verify_cert = true);
+    amber_sdk(const char *license_id = "default", const char *license_file = "~/.Amber.license", bool verify_cert = true, const char *cert = NULL, const char *capath = NULL);
 
     ~amber_sdk();
 
-    void verify_certificate(bool verify_cert) { certificate.verify = verify_cert; }
+    void verify_certificate(bool verify_cert) { ssl.verify = verify_cert; }
+
+    void set_cert(const char *cert) { ssl.cert = std::string(cert ? cert : ""); }
+
+    void set_capath(const char *capath) { ssl.capath = std::string(capath ? capath : ""); }
 
     bool create_sensor(amber_models::create_sensor_response &response, std::string &label);
 
@@ -85,10 +89,12 @@ private:
     std::time_t auth_time;
     std::string auth_bear_header;
 
-    // certificate options
+    // ssl options
     struct {
         bool verify;
-    } certificate;
+        std::string cert;
+        std::string capath;
+    } ssl;
 };
 
 #endif // AMBER_CPP_SDK_AMBER_SDK_H

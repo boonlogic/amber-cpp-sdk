@@ -53,7 +53,9 @@ int main(int argc, char *argv[]) {
         std::cout << e.what() << "\n";
         exit(1);
     }
-    sdk->verify_certificate(verify);
+    if (verify == false) {
+        sdk->verify_certificate(verify);
+    }
 
     if (my_sensor.empty()) {
         // no sensor specified, create one

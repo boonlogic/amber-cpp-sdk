@@ -14,7 +14,7 @@ const char* user_agent = "User-Agent: amber-cpp-sdk";
  *
  * @param license_id: license identifier label found within .Amber.license file
  * @param license_file: path to .Amber.license file
- * @param verify_cert: whether to verify the server certificate or not
+ * @param verify_cert: whether to verify the ssl certificate or not
  *
  * Environment:
  *   AMBER_LICENSE_FILE: sets license_file path
@@ -27,10 +27,12 @@ const char* user_agent = "User-Agent: amber-cpp-sdk";
  *
  *   AMBER_SERVER: overrides the server as found in .Amber.license file
  *
- *   AMBER_CERTIFICATE_VERIFY: verify the server certificate
+ *   AMBER_SSL_CERT: path to SSL certificate
+ *
+ *   AMBER_SSL_VERIFY: Either a boolean, in which case it controls whether we verify the server’s TLS certificate, or a string, in which case it must be a path to a CA bundle to use
  *
  */
-amber_sdk::amber_sdk(const char *license_id, const char *license_file, bool verify_cert) {
+amber_sdk::amber_sdk(const char *license_id, const char *license_file, bool verify_cert, const char *cert, const char *capath) {
     this->auth_time = 0;
     this->last_code = 0;
     this->last_error[0] = '\0';
@@ -42,12 +44,25 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file, bool veri
     char *env_username = getenv("AMBER_USERNAME");
     char *env_password = getenv("AMBER_PASSWORD");
     char *env_server = getenv("AMBER_SERVER");
-    char *env_verify = getenv("AMBER_CERTIFICATE_VERIFY");
 
+    char *env_cert = getenv("AMBER_SSL_CERT");
+    char *env_verify = getenv("AMBER_SSL_VERIFY");
+
+    // certificates
+    this->set_cert(env_cert ? env_cert : cert);
+
+    // verification initialize
+    this->verify_certificate(verify_cert);
+    this->set_capath(capath);
+    // verification override via env variable?
     if (env_verify) {
-        this->certificate.verify = ! (strcasecmp("false", env_verify) == 0);
-    } else {
-        this->certificate.verify = verify_cert;
+        this->verify_certificate(true);
+        if (strcasecmp("false", env_verify) == 0) {
+            this->verify_certificate(false);
+            this->set_capath("");
+        } else if (strcasecmp("true", env_verify) != 0) {
+            this->set_capath(env_verify);
+        }
     }
 
     // if username, password and server are all specified via environment, we're done here
@@ -209,8 +224,16 @@ void amber_sdk::common_curl_opts(CURL *curl, std::string &url, struct curl_slist
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, rbufptr);
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, this->last_error);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, this->certificate.verify ? 1 : 0);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, this->certificate.verify ? 1 : 0);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, this->ssl.verify ? 1 : 0);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, this->ssl.verify ? 1 : 0);
+    if (this->ssl.verify) {
+        if (this->ssl.cert.empty() == false) {
+            curl_easy_setopt(curl, CURLOPT_SSLCERT, this->ssl.cert.c_str());
+        }
+        if (this->ssl.capath.empty() == false) {
+            curl_easy_setopt(curl, CURLOPT_CAINFO, this->ssl.capath.c_str());
+        }
+    }
 }
 
 int amber_sdk::get_request(std::string &slug, std::string &sensor_id, json &response) {
