@@ -3,7 +3,38 @@
 
 int main(int argc, char *argv[]) {
 
+    bool sensor_created = false;
     std::string my_sensor;
+
+    bool verify = true;
+
+    for (int arg = 1 ; arg < argc ; arg++) {
+        std::string str(argv[arg]);
+        while (str.find('-') == 0) {
+            str.erase(0, 1);
+        }
+
+        if (strcasecmp("noverify", str.c_str()) == 0) {
+            verify = false;
+        } else {
+            bool help = false;
+            if (strcasecmp("help", str.c_str()) == 0) {
+                help = true;
+            }
+            if (! help) {
+                if (my_sensor.empty()) {
+                    my_sensor = str;
+                } else {
+                    help = true;
+                    std::cout << "error: unknown argument '" << str << "'\n";
+                }
+            }
+            if (help) {
+                std::cout << "usage: " << argv[0] << " [--noverify] <sensorID>\n";
+                exit(1);
+            }
+        }
+    }
 
     // set up handler
     amber_sdk *sdk;
@@ -13,17 +44,19 @@ int main(int argc, char *argv[]) {
         std::cout << e.what() << "\n";
         exit(1);
     }
+    if (verify == false) {
+        sdk->verify_certificate(verify);
+    }
 
-    if (argc > 1) {
-        // use sensor specified as argument
-        my_sensor = argv[1];
-    } else {
+    if (my_sensor.empty()) {
         // no sensor specified, create one
         std::string sensor_label = "fancy-sensor-6";
+        std::cout << "creating sensor " << sensor_label << "\n";
         amber_models::create_sensor_response create_sensor_response;
         if (sdk->create_sensor(create_sensor_response, sensor_label)) {
             create_sensor_response.dump();
             my_sensor = create_sensor_response.sensorId;
+            sensor_created = true;
         } else {
             std::cout << "error: " << sdk->last_error << "\n";
         }
@@ -88,7 +121,7 @@ int main(int argc, char *argv[]) {
     }
 
     // delete a sensor
-    if (!sdk->delete_sensor(my_sensor)) {
+    if (sensor_created && !sdk->delete_sensor(my_sensor)) {
         std::cout << "error: " << sdk->last_error << "\n";
     }
 }
