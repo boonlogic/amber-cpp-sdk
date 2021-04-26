@@ -51,11 +51,10 @@ namespace amber_models {
 
     class sensor_instance {
     public:
-        std::string tenantId;
         std::string sensorId;
         std::string label;
 
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(sensor_instance, tenantId, sensorId, label)
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(sensor_instance, sensorId, label)
         AMBER_DUMP()
     };
 
@@ -94,11 +93,10 @@ namespace amber_models {
     // post sensor response
     class create_sensor_response {
     public:
-        std::string tenantId;
         std::string sensorId;
         std::string label;
 
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(create_sensor_response, tenantId, sensorId, label)
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(create_sensor_response, sensorId, label)
         AMBER_DUMP()
     };
 
@@ -137,11 +135,10 @@ namespace amber_models {
     class get_sensor_response {
     public:
     std::string sensorId;
-        std::string tenantId;
         std::string label;
         usage_info usageInfo;
 
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(get_sensor_response, sensorId, tenantId, label, usageInfo)
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(get_sensor_response, sensorId, label, usageInfo)
         AMBER_DUMP()
     };
 
@@ -157,11 +154,10 @@ namespace amber_models {
     // update_sensor_response
     class update_sensor_response {
     public:
-        std::string tenantId;
         std::string sensorId;
         std::string label;
 
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(update_sensor_response, label, sensorId, tenantId)
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(update_sensor_response, label, sensorId)
         AMBER_DUMP()
     };
 
