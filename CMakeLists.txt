@@ -7,6 +7,8 @@ SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 include_directories(include)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 add_library(
         ambersdk
         SHARED
