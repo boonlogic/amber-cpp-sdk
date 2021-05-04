@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.9)
 project(ambersdk)
 set(CMAKE_CXX_STANDARD 14)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
@@ -38,3 +40,9 @@ add_executable(
         examples/stream_advanced.cpp
 )
 target_link_libraries(stream-advanced ambersdk curl)
+
+add_executable(
+    version
+    examples/version.cpp
+)
+target_link_libraries(version ambersdk curl)

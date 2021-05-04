@@ -262,6 +262,15 @@ namespace amber_models {
                                        frequencyIndexes, distanceIndexes, totalInferences, numClusters)
         AMBER_DUMP()
     };
+
+    class get_version_response {
+    public:
+        std::string version;
+
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(get_version_response, version)
+        AMBER_DUMP()
+    };
+
 };
 
 #endif //AMBER_CPP_SDK_AMBER_MODELS_H

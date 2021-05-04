@@ -61,6 +61,8 @@ public:
 
     bool get_status(amber_models::get_status_response &response, std::string &sensor_id);
 
+    bool get_version(amber_models::get_version_response &response);
+
     int last_code;
     char last_error[CURL_ERROR_SIZE];
 

@@ -210,6 +210,17 @@ bool amber_sdk::get_config(amber_models::get_config_response &response, std::str
     return true;
 }
 
+bool amber_sdk::get_version(amber_models::get_version_response &response) {
+    json json_response;
+    std::string no_sensor;
+    std::string slug = "/version";
+    if (this->get_request(slug, no_sensor, json_response) != 200) {
+        return false;
+    }
+    response = json_response.get<amber_models::get_version_response>();
+    return true;
+}
+
 bool amber_sdk::get_status(amber_models::get_status_response &response, std::string &sensor_id) {
     json json_response;
     std::string slug = "/status";
