@@ -35,17 +35,17 @@ int main(int argc, char *argv[]) {
     }
 
     // set up handler
-    amber_sdk *sdk;
+    amber_sdk *amber;
     try {
-        sdk = new amber_sdk();
+        amber = new amber_sdk();
         if (verify == false) {
-            sdk->verify_certificate(verify);
+            amber->verify_certificate(verify);
         }
         if (cainfo != NULL) {
-            sdk->set_cainfo(cainfo);
+            amber->set_cainfo(cainfo);
         }
         if (cert != NULL) {
-            sdk->set_cert(cert);
+            amber->set_cert(cert);
         }
     } catch (amber_except &e) {
         std::cout << e.what() << "\n";
@@ -54,10 +54,10 @@ int main(int argc, char *argv[]) {
 
     // get the version
     amber_models::get_version_response get_version_response;
-    if (sdk->get_version(get_version_response)) {
+    if (amber->get_version(get_version_response)) {
         get_version_response.dump();
     } else {
-        std::cout << "error: " << sdk->last_error << "\n";
+        std::cout << "error: " << amber->last_error << "\n";
     }
 }
 
