@@ -170,10 +170,11 @@ namespace amber_models {
         uint64_t learningRateDenominator;
         uint16_t learningMaxClusters;
         uint64_t learningMaxSamples;
+        uint32_t anomalyHistoryWindow;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(configure_sensor_request, featureCount, streamingWindowSize,
                                        samplesToBuffer, learningRateNumerator, learningRateDenominator,
-                                       learningMaxClusters, learningMaxSamples)
+                                       learningMaxClusters, learningMaxSamples, anomalyHistoryWindow)
         AMBER_DUMP()
     };
 
@@ -186,10 +187,11 @@ namespace amber_models {
         uint64_t learningRateDenominator;
         uint16_t learningMaxClusters;
         uint64_t learningMaxSamples;
+        uint32_t anomalyHistoryWindow;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(configure_sensor_response, featureCount, streamingWindowSize,
                                        samplesToBuffer, learningRateNumerator, learningRateDenominator,
-                                       learningMaxClusters, learningMaxSamples)
+                                       learningMaxClusters, learningMaxSamples, anomalyHistoryWindow)
         AMBER_DUMP()
     };
 
@@ -238,12 +240,14 @@ namespace amber_models {
         uint64_t learningRateDenominator;
         uint16_t learningMaxClusters;
         uint64_t learningMaxSamples;
+        uint32_t anomalyHistoryWindow;
         float percentVariation;
+
         std::vector<config_features> features;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(get_config_response, featureCount, streamingWindowSize, samplesToBuffer,
                                        learningRateNumerator, learningRateDenominator, learningMaxClusters,
-                                       learningMaxSamples, percentVariation, features)
+                                       learningMaxSamples, anomalyHistoryWindow, percentVariation, features)
         AMBER_DUMP()
     };
 
