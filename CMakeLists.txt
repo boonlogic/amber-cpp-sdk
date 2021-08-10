@@ -7,7 +7,7 @@ set(CMAKE_BUILD_TYPE Debug)
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
-include_directories(include)
+include_directories(include /usr/local/Cellar/curl/7.78.0/include)
 
 set(CMAKE_BUILD_TYPE Debug)
 
