@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     // set up handler
     amber_sdk *amber;
     try {
-        amber = new amber_sdk();
+        amber = new amber_sdk("v1");
     } catch (amber_except &e) {
         std::cout << e.what() << "\n";
         exit(1);
