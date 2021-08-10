@@ -117,7 +117,7 @@ namespace amber_models {
         uint64_t samplesTotal;
         uint64_t samplesThisPeriod;
 
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(post_stream_element, callsTotal, callsThisPeriod, samplesTotal, samplesThisPeriod)
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(post_stream_element, callsTotal, lastCalled, callsThisPeriod, samplesTotal, samplesThisPeriod)
         AMBER_DUMP()
     };
 
@@ -268,6 +268,24 @@ namespace amber_models {
         std::string version;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(get_version_response, version)
+        AMBER_DUMP()
+    };
+
+    class get_root_cause_response {
+    public:
+        std::vector<std::vector<float>> root_cause;
+
+        friend void to_json(json &j, const get_root_cause_response &r) {
+            for (const auto &root_cause: r.root_cause) {
+                j.push_back(root_cause);
+            }
+        }
+
+        friend void from_json(const json &j, get_root_cause_response &r) {
+            for (const auto &root_cause: j) {
+                r.root_cause.push_back(root_cause.get<std::vector<float>>());
+            }
+        }
         AMBER_DUMP()
     };
 

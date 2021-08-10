@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
 
     bool verify = true;
 
-    for (int arg = 1 ; arg < argc ; arg++) {
+    for (int arg = 1; arg < argc; arg++) {
         std::string str(argv[arg]);
         while (str.find('-') == 0) {
             str.erase(0, 1);
@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
             if (strcasecmp("help", str.c_str()) == 0) {
                 help = true;
             }
-            if (! help) {
+            if (!help) {
                 if (my_sensor.empty()) {
                     my_sensor = str;
                 } else {
@@ -116,6 +116,23 @@ int main(int argc, char *argv[]) {
     amber_models::get_status_response get_status_response;
     if (amber->get_status(get_status_response, my_sensor)) {
         get_status_response.dump();
+    } else {
+        std::cout << "error: " << amber->last_error << "\n";
+    }
+
+    // get root-cause by idlist
+    amber_models::get_root_cause_response get_root_cause_response;
+    std::string idlist = "[1]";
+    if (amber->get_root_cause_by_idlist(get_root_cause_response, idlist, my_sensor)) {
+        get_root_cause_response.dump();
+    } else {
+        std::cout << "error: " << amber->last_error << "\n";
+    }
+
+    // get root-cause by patternlist
+    std::string patternlist = "[[1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5],[1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2]]";
+    if (amber->get_root_cause_by_patternlist(get_root_cause_response, patternlist, my_sensor)) {
+        get_root_cause_response.dump();
     } else {
         std::cout << "error: " << amber->last_error << "\n";
     }

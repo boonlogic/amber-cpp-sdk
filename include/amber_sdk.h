@@ -29,7 +29,8 @@ public:
 
 class amber_sdk {
 public:
-    amber_sdk(const char *license_id = "default", const char *license_file = "~/.Amber.license", bool verify_cert = true, const char *cert = NULL, const char *cainfo = NULL);
+    amber_sdk(const char *license_id = "default", const char *license_file = "~/.Amber.license",
+              bool verify_cert = true, const char *cert = NULL, const char *cainfo = NULL);
 
     ~amber_sdk();
 
@@ -63,6 +64,12 @@ public:
 
     bool get_version(amber_models::get_version_response &response);
 
+    bool get_root_cause_by_idlist(amber_models::get_root_cause_response &response, std::string &id_list,
+                                  std::string &sensor_id);
+
+    bool get_root_cause_by_patternlist(amber_models::get_root_cause_response &response, std::string &pattern_list,
+                                       std::string &sensor_id);
+
     int last_code;
     char last_error[CURL_ERROR_SIZE];
 
@@ -76,7 +83,7 @@ private:
 
     bool authenticate(json &response);
 
-    int get_request(std::string &slug, std::string &sensor_id, json &response);
+    int get_request(std::string &slug, std::string &query_params, std::string &sensor_id, json &response);
 
     int post_request(std::string &slug, std::string &sensor_id, std::string &body, bool do_auth, json &response);
 
