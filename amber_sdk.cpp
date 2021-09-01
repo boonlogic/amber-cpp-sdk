@@ -3,6 +3,12 @@
 #include <fstream>
 #include <sstream>
 
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
+
 using json = nlohmann::json;
 
 const char *user_agent = "User-Agent: amber-cpp-sdk";
@@ -113,8 +119,12 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     return size * nmemb;
 }
 
-bool amber_sdk::create_sensor(amber_models::create_sensor_response &response, std::string &label) {
-    amber_models::create_sensor_request request(label);
+bool amber_sdk::create_sensor(amber_models::create_sensor_response &response, std::string *label) {
+    std::string defaultLabel = std::string();
+    if (label) {
+        defaultLabel = *label;
+    }
+    amber_models::create_sensor_request request(defaultLabel);
     json j = request;
     std::string body = j.dump();
     json json_response;
@@ -152,7 +162,7 @@ bool amber_sdk::configure_sensor(amber_models::configure_sensor_response &respon
         response = json_response.get<amber_models::configure_sensor_response>();
     }
     catch (const std::exception &e) {
-        fprintf(stderr, "%s", e.what());
+        fprintf(stderr, "%s\n", e.what());
         return false;
     }
     return true;
@@ -169,7 +179,7 @@ bool amber_sdk::get_sensor(amber_models::get_sensor_response &response, std::str
         response = json_response.get<amber_models::get_sensor_response>();
     }
     catch (const std::exception &e) {
-        fprintf(stderr, "%s", e.what());
+        fprintf(stderr, "%s\n", e.what());
         return false;
     }
     return true;
@@ -187,7 +197,7 @@ bool amber_sdk::list_sensors(amber_models::list_sensors_response &response) {
         response = json_response.get<amber_models::list_sensors_response>();
     }
     catch (const std::exception &e) {
-        fprintf(stderr, "%s", e.what());
+        fprintf(stderr, "%s\n", e.what());
         return false;
     }
     return true;
@@ -207,7 +217,7 @@ amber_sdk::update_sensor(amber_models::update_sensor_response &response, std::st
         response = json_response.get<amber_models::update_sensor_response>();
     }
     catch (const std::exception &e) {
-        fprintf(stderr, "%s", e.what());
+        fprintf(stderr, "%s\n", e.what());
         return false;
     }
     return true;
@@ -223,14 +233,13 @@ bool amber_sdk::delete_sensor(std::string &sensor_id) {
         }
     }
     catch (const std::exception &e) {
-        fprintf(stderr, "%s", e.what());
+        fprintf(stderr, "%s\n", e.what());
         return false;
     }
     return true;
 }
 
-bool
-amber_sdk::stream_sensor(amber_models::stream_sensor_response &response, std::string &sensor_id, std::string &csvdata) {
+bool amber_sdk::stream_sensor(amber_models::stream_sensor_response &response, std::string &sensor_id, std::string &csvdata) {
     amber_models::stream_sensor_request request{csvdata};
     json j = request;
     std::string body = j.dump();
@@ -243,7 +252,62 @@ amber_sdk::stream_sensor(amber_models::stream_sensor_response &response, std::st
         response = json_response.get<amber_models::stream_sensor_response>();
     }
     catch (const std::exception &e) {
-        fprintf(stderr, "%s", e.what());
+        fprintf(stderr, "%s\n", e.what());
+        return false;
+    }
+    return true;
+}
+
+bool amber_sdk::pretrain_sensor(amber_models::pretrain_sensor_response &response, std::string &sensor_id, std::string &csvdata, bool autotuneConfig, bool block) {
+    amber_models::pretrain_sensor_request request{csvdata, autotuneConfig};
+    json j = request;
+    std::string body = j.dump();
+    json json_response;
+    std::string slug = "/pretrain";
+    try {
+        int response_code = this->post_request(slug, sensor_id, body, true, json_response);
+        if (response_code != 200 && response_code != 202) {
+            return false;
+        }
+        if (!block) {
+            response = json_response.get<amber_models::pretrain_sensor_response>();
+            return false;
+        }
+
+        amber_models::get_pretrain_response get_response;
+        while (true) {
+            this->get_pretrain(get_response, sensor_id);
+            // get_response = json_response.get<amber_models::get_pretrain_response>();
+            if (get_response.state.compare("Pretraining") == 0) {
+                sleep(5);
+                continue;
+            } else {
+                response.state = get_response.state;
+                response.message = get_response.message;
+                return true;
+            }
+        }
+    }
+    catch (const std::exception &e) {
+        fprintf(stderr, "%s\n", e.what());
+        return false;
+    }
+    return true;
+}
+
+bool amber_sdk::get_pretrain(amber_models::get_pretrain_response &response, std::string &sensor_id) {
+    json json_response;
+    std::string slug = "/pretrain";
+    try {
+        std::string query_params;
+        int response_code = this->get_request(slug, query_params, sensor_id, json_response);
+        if (response_code != 200 && response_code != 202) {
+            return false;
+        }
+        response = json_response.get<amber_models::get_pretrain_response>();
+    }
+    catch (const std::exception &e) {
+        fprintf(stderr, "%s\n", e.what());
         return false;
     }
     return true;
@@ -260,7 +324,7 @@ bool amber_sdk::get_config(amber_models::get_config_response &response, std::str
         response = json_response.get<amber_models::get_config_response>();
     }
     catch (const std::exception &e) {
-        fprintf(stderr, "%s", e.what());
+        fprintf(stderr, "%s\n", e.what());
         return false;
     }
     return true;
@@ -278,7 +342,7 @@ bool amber_sdk::get_version(amber_models::get_version_response &response) {
         response = json_response.get<amber_models::get_version_response>();
     }
     catch (const std::exception &e) {
-        fprintf(stderr, "%s", e.what());
+        fprintf(stderr, "%s\n", e.what());
         return false;
     }
     return true;
@@ -295,7 +359,7 @@ bool amber_sdk::get_status(amber_models::get_status_response &response, std::str
         response = json_response.get<amber_models::get_status_response>();
     }
     catch (const std::exception &e) {
-        fprintf(stderr, "%s", e.what());
+        fprintf(stderr, "%s\n", e.what());
         return false;
     }
     return true;
@@ -313,7 +377,7 @@ bool amber_sdk::get_root_cause_by_idlist(amber_models::get_root_cause_response &
         response = json_response.get<amber_models::get_root_cause_response>();
     }
     catch (const std::exception &e) {
-        fprintf(stderr, "%s", e.what());
+        fprintf(stderr, "%s\n", e.what());
         return false;
     }
     return true;
@@ -331,7 +395,7 @@ bool amber_sdk::get_root_cause_by_patternlist(amber_models::get_root_cause_respo
         response = json_response.get<amber_models::get_root_cause_response>();
     }
     catch (const std::exception &e) {
-        fprintf(stderr, "%s", e.what());
+        fprintf(stderr, "%s\n", e.what());
         return false;
     }
     return true;
@@ -400,8 +464,7 @@ int amber_sdk::get_request(std::string &slug, std::string &query_params, std::st
     return this->last_code;
 }
 
-int
-amber_sdk::post_request(std::string &slug, std::string &sensor_id, std::string &body, bool do_auth, json &response) {
+int amber_sdk::post_request(std::string &slug, std::string &sensor_id, std::string &body, bool do_auth, json &response) {
 
     reset_last_message();
     if (do_auth) {
@@ -572,7 +635,7 @@ bool amber_sdk::authenticate(json &response) {
         this->auth_bear_header = std::string("Authorization: Bearer " + this->auth.idToken);
     }
     catch (const std::exception &e) {
-        fprintf(stderr, "%s", e.what());
+        fprintf(stderr, "%s\n", e.what());
         return false;
     }
     return true;

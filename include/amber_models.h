@@ -36,6 +36,7 @@ namespace amber_models {
         std::string password;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(auth_request, username, password)
+
         AMBER_DUMP()
     };
 
@@ -46,6 +47,7 @@ namespace amber_models {
         std::string refreshToken;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(auth_response, idToken, expiresIn, refreshToken)
+
         AMBER_DUMP()
     };
 
@@ -55,6 +57,7 @@ namespace amber_models {
         std::string label;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(sensor_instance, sensorId, label)
+
         AMBER_DUMP()
     };
 
@@ -73,6 +76,7 @@ namespace amber_models {
                 r.sensors.push_back(sensor.get<amber_models::sensor_instance>());
             }
         }
+
         AMBER_DUMP()
     };
 
@@ -87,6 +91,7 @@ namespace amber_models {
         std::string label;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(create_sensor_request, label)
+
         AMBER_DUMP()
     };
 
@@ -97,6 +102,7 @@ namespace amber_models {
         std::string label;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(create_sensor_response, sensorId, label)
+
         AMBER_DUMP()
     };
 
@@ -107,6 +113,7 @@ namespace amber_models {
         std::string lastCalled;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(usage_element, callsTotal, callsThisPeriod, lastCalled)
+
         AMBER_DUMP()
     };
 
@@ -117,7 +124,9 @@ namespace amber_models {
         uint64_t samplesTotal;
         uint64_t samplesThisPeriod;
 
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(post_stream_element, callsTotal, lastCalled, callsThisPeriod, samplesTotal, samplesThisPeriod)
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(post_stream_element, callsTotal, lastCalled, callsThisPeriod, samplesTotal,
+                                       samplesThisPeriod)
+
         AMBER_DUMP()
     };
 
@@ -134,11 +143,12 @@ namespace amber_models {
 
     class get_sensor_response {
     public:
-    std::string sensorId;
+        std::string sensorId;
         std::string label;
         usage_info usageInfo;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(get_sensor_response, sensorId, label, usageInfo)
+
         AMBER_DUMP()
     };
 
@@ -148,6 +158,7 @@ namespace amber_models {
         std::string label;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(update_sensor_request, label)
+
         AMBER_DUMP()
     };
 
@@ -158,6 +169,7 @@ namespace amber_models {
         std::string label;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(update_sensor_response, label, sensorId)
+
         AMBER_DUMP()
     };
 
@@ -175,6 +187,7 @@ namespace amber_models {
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(configure_sensor_request, featureCount, streamingWindowSize,
                                        samplesToBuffer, learningRateNumerator, learningRateDenominator,
                                        learningMaxClusters, learningMaxSamples, anomalyHistoryWindow)
+
         AMBER_DUMP()
     };
 
@@ -192,6 +205,7 @@ namespace amber_models {
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(configure_sensor_response, featureCount, streamingWindowSize,
                                        samplesToBuffer, learningRateNumerator, learningRateDenominator,
                                        learningMaxClusters, learningMaxSamples, anomalyHistoryWindow)
+
         AMBER_DUMP()
     };
 
@@ -200,6 +214,7 @@ namespace amber_models {
         std::string data;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(stream_sensor_request, data)
+
         AMBER_DUMP()
     };
 
@@ -220,6 +235,63 @@ namespace amber_models {
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(stream_sensor_response, state, message, progress, clusterCount, retryCount,
                                        streamingWindowSize, ID, SI, AD, AH, AM, AW)
+
+        AMBER_DUMP()
+    };
+
+    class pretrain_sensor_request {
+    public:
+        std::string data;
+        bool autotuneConfig;
+
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(pretrain_sensor_request, data, autotuneConfig)
+
+        AMBER_DUMP()
+    };
+
+    class pretrain_sensor_response {
+    public:
+
+        std::string state;
+        std::string message;
+
+        friend void to_json(json &j, const pretrain_sensor_response &r) {
+            j["state"] = r.state;
+            if (!r.message.empty()) {
+                j["message"] = r.message;
+            }
+        }
+
+        friend void from_json(const json &j, pretrain_sensor_response &r) {
+            r.state = j.at("state");
+            if (j.contains("message")) {
+                r.message = j.at("message");
+            }
+        }
+
+        AMBER_DUMP()
+    };
+
+    class get_pretrain_response {
+    public:
+
+        std::string state;
+        std::string message;
+
+        friend void to_json(json &j, const get_pretrain_response &r) {
+            j["state"] = r.state;
+            if (!r.message.empty()) {
+                j["message"] = r.message;
+            }
+        }
+
+        friend void from_json(const json &j, get_pretrain_response &r) {
+            r.state = j.at("state");
+            if (j.contains("message")) {
+                r.message = j.at("message");
+            }
+        }
+
         AMBER_DUMP()
     };
 
@@ -228,6 +300,7 @@ namespace amber_models {
         float maxVal;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(config_features, minVal, maxVal)
+
         AMBER_DUMP()
     };
 
@@ -248,6 +321,7 @@ namespace amber_models {
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(get_config_response, featureCount, streamingWindowSize, samplesToBuffer,
                                        learningRateNumerator, learningRateDenominator, learningMaxClusters,
                                        learningMaxSamples, anomalyHistoryWindow, percentVariation, features)
+
         AMBER_DUMP()
     };
 
@@ -264,14 +338,41 @@ namespace amber_models {
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(get_status_response, pca, clusterGrowth, clusterSizes, anomalyIndexes,
                                        frequencyIndexes, distanceIndexes, totalInferences, numClusters)
+
         AMBER_DUMP()
     };
 
     class get_version_response {
     public:
-        std::string version;
 
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(get_version_response, version)
+        std::string builder;
+        std::string expertApi;
+        std::string expertCommon;
+        std::string nanoSecure;
+        std::string release;
+        std::string swaggerUi;
+        std::string apiVersion;
+
+        friend void to_json(json &j, const get_version_response &r) {
+            j["builder"] = r.builder;
+            j["expert-api"] = r.expertApi;
+            j["expert-common"] = r.expertCommon;
+            j["nano-secure"] = r.nanoSecure;
+            j["release"] = r.release;
+            j["swagger-ui"] = r.swaggerUi;
+            j["api-version"] = r.apiVersion;
+        }
+
+        friend void from_json(const json &j, get_version_response &r) {
+            r.builder = j.at("builder");
+            r.expertApi = j.at("expert-api");
+            r.expertCommon = j.at("expert-common");
+            r.nanoSecure = j.at("nano-secure");
+            r.release = j.at("release");
+            r.swaggerUi = j.at("swagger-ui");
+            r.apiVersion = j.at("api-version");
+        }
+
         AMBER_DUMP()
     };
 
@@ -290,6 +391,7 @@ namespace amber_models {
                 r.root_cause.push_back(root_cause.get<std::vector<float>>());
             }
         }
+
         AMBER_DUMP()
     };
 

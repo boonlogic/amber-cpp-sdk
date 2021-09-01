@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
         // no sensor specified, create one
         std::string sensor_label = "fancy-sensor-6";
         amber_models::create_sensor_response create_sensor_response;
-        if (amber->create_sensor(create_sensor_response, sensor_label)) {
+        if (amber->create_sensor(create_sensor_response, &sensor_label)) {
             create_sensor_response.dump();
             my_sensor = create_sensor_response.sensorId;
             sensor_created = true;
