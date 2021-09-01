@@ -1,5 +1,7 @@
 #include "amber_sdk.h"
 #include <iostream>
+#include <sstream>
+#include <fstream>
 
 int main(int argc, char *argv[]) {
 
@@ -39,7 +41,7 @@ int main(int argc, char *argv[]) {
     // set up handler
     amber_sdk *amber;
     try {
-        amber = new amber_sdk("v1");
+        amber = new amber_sdk();
     } catch (amber_except &e) {
         std::cout << e.what() << "\n";
         exit(1);
@@ -48,12 +50,20 @@ int main(int argc, char *argv[]) {
         amber->verify_certificate(verify);
     }
 
+    // get version
+    amber_models::get_version_response get_version_response;
+    if (amber->get_version(get_version_response)) {
+        get_version_response.dump();
+    } else {
+        std::cout << "error: " << amber->last_error << "\n";
+    }
+
     if (my_sensor.empty()) {
         // no sensor specified, create one
         std::string sensor_label = "fancy-sensor-6";
         std::cout << "creating sensor " << sensor_label << "\n";
         amber_models::create_sensor_response create_sensor_response;
-        if (amber->create_sensor(create_sensor_response, sensor_label)) {
+        if (amber->create_sensor(create_sensor_response, &sensor_label)) {
             create_sensor_response.dump();
             my_sensor = create_sensor_response.sensorId;
             sensor_created = true;
@@ -99,6 +109,38 @@ int main(int argc, char *argv[]) {
     amber_models::get_config_response get_config_response;
     if (amber->get_config(get_config_response, my_sensor)) {
         get_config_response.dump();
+    } else {
+        std::cout << "error: " << amber->last_error << "\n";
+    }
+
+    // pretrain a sensor
+    amber_models::pretrain_sensor_response pretrain_sensor_response;
+    // Read in pretrain data //
+    std::string traindata, line;
+    std::ifstream myFile("./examples/pretrain-data.csv");
+    float val;
+    while(std::getline(myFile, line)) {
+        std::stringstream ss(line);
+        while(ss >> val) {
+            traindata = traindata + std::to_string(val) + ",";
+            if(ss.peek() == ',') ss.ignore();
+        }
+    }
+    traindata.pop_back();
+    myFile.close();
+    ///////////////////////////
+
+    bool autotuneConfig = true;
+    if (amber->pretrain_sensor(pretrain_sensor_response, my_sensor, traindata, autotuneConfig)) {
+        pretrain_sensor_response.dump();
+    } else {
+        std::cout << "error: " << amber->last_error << "\n";
+    }
+
+    // get pretrain status
+    amber_models::get_pretrain_response get_pretrain_response;
+    if (amber->get_pretrain(get_pretrain_response, my_sensor)) {
+        get_pretrain_response.dump();
     } else {
         std::cout << "error: " << amber->last_error << "\n";
     }

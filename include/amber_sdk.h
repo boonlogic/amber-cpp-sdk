@@ -40,7 +40,7 @@ public:
 
     void set_cainfo(const char *cainfo) { ssl.cainfo = std::string(cainfo ? cainfo : ""); }
 
-    bool create_sensor(amber_models::create_sensor_response &response, std::string &label);
+    bool create_sensor(amber_models::create_sensor_response &response, std::string *label = NULL);
 
     bool get_sensor(amber_models::get_sensor_response &response, std::string &sensor_id);
 
@@ -57,6 +57,10 @@ public:
                           uint64_t learning_max_samples = 1000000, uint32_t anomalyHistoryWindow = 10000);
 
     bool stream_sensor(amber_models::stream_sensor_response &response, std::string &sensor_id, std::string &csvdata);
+
+    bool pretrain_sensor(amber_models::pretrain_sensor_response &response, std::string &sensor_id, std::string &csvdata, bool autotuneConfig, bool block = true);
+
+    bool get_pretrain(amber_models::get_pretrain_response &response, std::string &sensor_id);
 
     bool get_config(amber_models::get_config_response &response, std::string &sensor_id);
 
