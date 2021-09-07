@@ -1,0 +1,6 @@
+include:
+  - project: 'development/builder'
+    file: 'pipelines/base/pipeline.yml'
+
+  - project: 'development/builder'
+    file: 'pipelines/amber-cpp-sdk/pipeline.yml'
