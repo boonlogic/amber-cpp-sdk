@@ -1,6 +1,61 @@
-include:
-  - project: 'development/builder'
-    file: 'pipelines/base/pipeline.yml'
+image: 715859896688.dkr.ecr.us-east-1.amazonaws.com/pipeline-x86-ubuntu:latest
 
-  - project: 'development/builder'
-    file: 'pipelines/amber-cpp-sdk/pipeline.yml'
+before_script:
+  - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client git -y )'
+  - eval $(ssh-agent -s)
+  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - ssh-keyscan gitlab.boonlogic.com >> ~/.ssh/known_hosts
+  - chmod 644 ~/.ssh/known_hosts
+  - export PATH=~/.local/bin:$PATH
+
+variables:
+  GIT_STRATEGY: none
+  GIT_SSL_NO_VERIFY: "true"
+  CLANG_FORMAT: clang-format
+  REF_NAME: master
+  SHELL: /bin/bash
+
+stages:
+  - build
+  - self-test
+  - trigger
+  
+build:
+  stage: build
+  tags:
+    - expert-docker
+  script:
+  - chmod -Rf 755 ci-root && rm -rf ci-root || true
+  - git clone git@gitlab.boonlogic.com:development/builder.git ci-root
+  - cd ci-root
+  - git checkout ${CI_COMMIT_REF_NAME} || true
+  - BRANCH=${CI_COMMIT_REF_NAME} make amber-cpp-sdk-env
+  - make amber-cpp-sdk-build
+  artifacts:
+    paths:
+    - ci-root/
+
+code-check:
+  stage: self-test
+  tags:
+    - expert-docker
+  script:
+    - cd ci-root
+    - echo "code-check passed during build step"
+
+unit-test:
+  stage: self-test
+  tags:
+    - expert-docker
+  script:
+    - cd ci-root
+    - make amber-cpp-sdk-test
+
+trigger-expert-api:
+  stage: trigger
+  trigger:
+    project: development/expert/expert-api
+    branch: ${CI_COMMIT_REF_NAME}
+
