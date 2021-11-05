@@ -1,0 +1,24 @@
+{
+    "default": {
+        "username": "admin",
+        "password": "admin",
+        "server": "http://localhost:5007/v1"
+    },
+    "missing-username": {
+        "password": "filler-password",
+        "server": "https://amber-local.boonlogic.com/pretrain"
+    },
+    "missing-password": {
+        "username": "amber-test-user",
+        "server": "https://amber-local.boonlogic.com/pretrain"
+    },
+    "missing-server": {
+        "username": "amber-test-user",
+        "password": "filler-password"
+    },
+    "garbage": {
+        "username": "garbage-username",
+        "password": "garbage-password",
+        "server": "https://amber-local.boonlogic.com/pretrain"
+    }
+}

@@ -1,0 +1,13 @@
+.DS_Store
+.idea/
+bin/
+build/
+lib/
+test_client*
+_deps/
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile*
+cmake_*
+Makefile
+Testing/*
