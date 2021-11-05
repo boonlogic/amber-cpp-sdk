@@ -52,10 +52,10 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    // list all sensors
-    amber_models::list_sensors_response list_sensors_response;
-    if (amber->list_sensors(list_sensors_response)) {
-        list_sensors_response.dump();
+    // get the version
+    amber_models::get_version_response get_version_response;
+    if (amber->get_version(get_version_response)) {
+        get_version_response.dump();
     } else {
         std::cout << "error: " << amber->last_error << "\n";
     }

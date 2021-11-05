@@ -48,68 +48,100 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file, bool veri
     this->expires_in = 0;
     this->auth_ok = false;
 
-    char *env_license_file = getenv("AMBER_LICENSE_FILE");
-    char *env_license_id = getenv("AMBER_LICENSE_ID");
-    char *env_username = getenv("AMBER_USERNAME");
-    char *env_password = getenv("AMBER_PASSWORD");
-    char *env_server = getenv("AMBER_SERVER");
+    if (license_id == NULL) {
+        license_id = "";
+    }
+    if (license_file == NULL) {
+        license_file = "";
+    }
+    if (cert == NULL) {
+        cert = "";
+    }
+    if (cainfo == NULL) {
+        cainfo = "";
+    }
 
-    char *env_cert = getenv("AMBER_SSL_CERT");
-    char *env_verify = getenv("AMBER_SSL_VERIFY");
+    // first load license file
+    this->license_file = getenv("AMBER_LICENSE_FILE") ? getenv("AMBER_LICENSE_FILE") : std::string(license_file);
+    
+    // next get license ID
+    this->license_id = getenv("AMBER_LICENSE_ID") ? getenv("AMBER_LICENSE_ID") : std::string(license_id);
 
-    // certificates
-    this->set_cert(env_cert ? env_cert : cert);
+    json amber_entry = {{"username", NULL}, {"password", NULL}, {"server", NULL}, {"oauthserver", NULL}};
 
-    // verification initialize
-    this->verify_certificate(verify_cert);
-    this->set_cainfo(cainfo);
-    // verification override via env variable?
-    if (env_verify) {
-        this->verify_certificate(true);
-        if (strcasecmp("false", env_verify) == 0) {
-            this->verify_certificate(false);
-            this->set_cainfo("");
-        } else if (strcasecmp("true", env_verify) != 0) {
-            this->set_cainfo(env_verify);
+    // create license profile
+    if (!this->license_file.empty()) {
+
+        // expand license file to full path
+        wordexp_t exp_result;
+        wordexp(this->license_file.c_str(), &exp_result, 0);
+        this->license_file = exp_result.we_wordv[0];
+	wordfree(&exp_result);
+
+        // open up license file
+        std::ifstream file(this->license_file);
+        if (file.is_open()) {
+            // load license file as json
+            json license_json;
+            try {
+                file >> license_json;
+            } catch (nlohmann::detail::parse_error &e) {
+                throw amber_except("json not formatted correctly");
+            }
+
+            // locate license entry in license file
+            if (!license_json.contains(this->license_id)) {
+                throw amber_except("license_id '%s' not found in '%s'", this->license_id.c_str(), this->license_file.c_str());
+            }
+
+            // rewrite as license_entry structure
+            amber_entry = license_json[this->license_id];
+            try {
+                this->license = amber_entry.get<amber_models::license_entry>();
+            } catch (nlohmann::detail::out_of_range &e) {
+                throw amber_except(e.what());
+            }
+        } else {
+            // if license file is something other than default, throw exception
+            if (strcmp(license_file, "~/.Amber.license") == 0) {
+                throw amber_except("license_file '%s' not found", license_file);
+            }
         }
     }
 
-    // if username, password and server are all specified via environment, we're done here
-    if (env_username && env_password && env_server) {
-        this->license.username = env_username;
-        this->license.password = env_password;
-        this->license.server = env_server;
-        return;
+    try {
+        this->license.username = getenv("AMBER_USERNAME") ? getenv("AMBER_USERNAME") : this->license.username;
+        this->license.password = getenv("AMBER_PASSWORD") ? getenv("AMBER_PASSWORD") : this->license.password;
+        this->license.server = getenv("AMBER_SERVER") ? getenv("AMBER_SERVER") : this->license.server;
+        this->license.oauthserver = getenv("AMBER_OAUTH_SERVER") ? getenv("AMBER_OAUTH_SERVER") : this->license.server;
+        this->set_cert(getenv("AMBER_SSL_CERT") ? getenv("AMBER_SSL_CERT") : cert);
+
+        this->verify_certificate(verify_cert);
+        this->set_cainfo(cainfo);
+        // verification override via env variable?
+        if (getenv("AMBER_SSL_VERIFY")) {
+            this->verify_certificate(true);
+            if (strcasecmp("false", getenv("AMBER_SSL_VERIFY")) == 0) {
+                this->verify_certificate(false);
+                this->set_cainfo("");
+            } else if (strcasecmp("true", getenv("AMBER_SSL_VERIFY")) != 0) {
+                this->set_cainfo(getenv("AMBER_SSL_VERIFY"));
+            }
+        }
+    } catch (json::exception& e) {
+        throw amber_except("json failed with exception: %s", e.what());
     }
 
-    // otherwise we acquire either or both of them from license file
-    license_file = env_license_file ? env_license_file : license_file;
-    license_id = env_license_id ? env_license_id : license_id;
-
-    // expand license file to full path
-    wordexp_t exp_result;
-    wordexp(license_file, &exp_result, 0);
-    license_file = exp_result.we_wordv[0];
-
-    // open up license file
-    std::ifstream file(license_file);
-    if (!file.is_open()) {
-        throw amber_except("unable to open %s", license_file);
+    if (this->license.username.compare("") == 0) {
+        throw amber_except("username not specified");
+    }
+    if (this->license.password.compare("") == 0) {
+        throw amber_except("password not specified");
+    }
+    if (this->license.server.compare("") == 0) {
+        throw amber_except("server not specified");
     }
 
-    // load license file as json
-    json license_json;
-    file >> license_json;
-
-    // locate license entry in license file
-    json::iterator it = license_json.find(license_id);
-    if (it == license_json.end()) {
-        throw amber_except("license_id '%s' not found in '%s'", license_id, license_file);
-    }
-
-    // rewrite as license_entry structure
-    json amber_entry = *it;
-    this->license = amber_entry.get<amber_models::license_entry>();
 }
 
 amber_sdk::~amber_sdk() = default;
@@ -143,14 +175,15 @@ bool amber_sdk::create_sensor(amber_models::create_sensor_response &response, st
     }
 }
 
-bool amber_sdk::configure_sensor(amber_models::configure_sensor_response &response, std::string &sensor_id,
+bool amber_sdk::configure_sensor(amber_models::configure_sensor_response &response, const std::string &sensor_id,
                                  uint16_t feature_count, uint16_t streaming_window_size,
                                  uint32_t samples_to_buffer, uint64_t learning_rate_numerator,
                                  uint32_t learning_rate_denominator, uint16_t learning_max_clusters,
-                                 uint64_t learning_max_samples, uint32_t anomalyHistoryWindow) {
+                                 uint64_t learning_max_samples, uint32_t anomaly_history_window) {
     amber_models::configure_sensor_request request{feature_count, streaming_window_size, samples_to_buffer,
                                                    learning_rate_numerator, learning_rate_denominator,
-                                                   learning_max_clusters, learning_max_samples, anomalyHistoryWindow};
+                                                   learning_max_clusters, learning_max_samples, anomaly_history_window};
+
     json j = request;
     std::string body = j.dump();
     json json_response;
@@ -168,7 +201,7 @@ bool amber_sdk::configure_sensor(amber_models::configure_sensor_response &respon
     return true;
 }
 
-bool amber_sdk::get_sensor(amber_models::get_sensor_response &response, std::string &sensor_id) {
+bool amber_sdk::get_sensor(amber_models::get_sensor_response &response, const std::string &sensor_id) {
     json json_response;
     std::string slug = "/sensor";
     try {
@@ -204,7 +237,7 @@ bool amber_sdk::list_sensors(amber_models::list_sensors_response &response) {
 }
 
 bool
-amber_sdk::update_sensor(amber_models::update_sensor_response &response, std::string sensor_id, std::string &label) {
+amber_sdk::update_sensor(amber_models::update_sensor_response &response, const std::string sensor_id, std::string &label) {
     amber_models::update_sensor_request request{label};
     json j = request;
     std::string body = j.dump();
@@ -223,7 +256,7 @@ amber_sdk::update_sensor(amber_models::update_sensor_response &response, std::st
     return true;
 }
 
-bool amber_sdk::delete_sensor(std::string &sensor_id) {
+bool amber_sdk::delete_sensor(const std::string &sensor_id) {
     json json_response;
     std::string slug = "/sensor";
 
@@ -239,7 +272,7 @@ bool amber_sdk::delete_sensor(std::string &sensor_id) {
     return true;
 }
 
-bool amber_sdk::stream_sensor(amber_models::stream_sensor_response &response, std::string &sensor_id, std::string &csvdata) {
+bool amber_sdk::stream_sensor(amber_models::stream_sensor_response &response, const std::string &sensor_id, std::string &csvdata) {
     amber_models::stream_sensor_request request{csvdata};
     json j = request;
     std::string body = j.dump();
@@ -258,7 +291,7 @@ bool amber_sdk::stream_sensor(amber_models::stream_sensor_response &response, st
     return true;
 }
 
-bool amber_sdk::pretrain_sensor(amber_models::pretrain_sensor_response &response, std::string &sensor_id, std::string &csvdata, bool autotuneConfig, bool block) {
+bool amber_sdk::pretrain_sensor(amber_models::pretrain_sensor_response &response, const std::string &sensor_id, std::string &csvdata, bool autotuneConfig, bool block) {
     amber_models::pretrain_sensor_request request{csvdata, autotuneConfig};
     json j = request;
     std::string body = j.dump();
@@ -269,9 +302,9 @@ bool amber_sdk::pretrain_sensor(amber_models::pretrain_sensor_response &response
         if (response_code != 200 && response_code != 202) {
             return false;
         }
-        if (!block) {
+        if (!block || response_code == 200) {
             response = json_response.get<amber_models::pretrain_sensor_response>();
-            return false;
+            return true;
         }
 
         amber_models::get_pretrain_response get_response;
@@ -295,7 +328,7 @@ bool amber_sdk::pretrain_sensor(amber_models::pretrain_sensor_response &response
     return true;
 }
 
-bool amber_sdk::get_pretrain(amber_models::get_pretrain_response &response, std::string &sensor_id) {
+bool amber_sdk::get_pretrain(amber_models::get_pretrain_response &response, const std::string &sensor_id) {
     json json_response;
     std::string slug = "/pretrain";
     try {
@@ -313,7 +346,7 @@ bool amber_sdk::get_pretrain(amber_models::get_pretrain_response &response, std:
     return true;
 }
 
-bool amber_sdk::get_config(amber_models::get_config_response &response, std::string &sensor_id) {
+bool amber_sdk::get_config(amber_models::get_config_response &response, const std::string &sensor_id) {
     json json_response;
     std::string slug = "/config";
     try {
@@ -348,7 +381,7 @@ bool amber_sdk::get_version(amber_models::get_version_response &response) {
     return true;
 }
 
-bool amber_sdk::get_status(amber_models::get_status_response &response, std::string &sensor_id) {
+bool amber_sdk::get_status(amber_models::get_status_response &response, const std::string &sensor_id) {
     json json_response;
     std::string slug = "/status";
     try {
@@ -365,10 +398,15 @@ bool amber_sdk::get_status(amber_models::get_status_response &response, std::str
     return true;
 }
 
-bool amber_sdk::get_root_cause_by_idlist(amber_models::get_root_cause_response &response, std::string &idlist,
-                                         std::string &sensor_id) {
+bool amber_sdk::get_root_cause_by_idlist(amber_models::get_root_cause_response &response, const std::string &sensor_id,
+                                         std::string &idlist) {
     json json_response;
     std::string slug = "/rootCause";
+
+    if (idlist.find(std::string("[")) == std::string::npos 
+        || idlist.find(std::string("]")) == std::string::npos) {
+        throw amber_except("idlist should be in the form [1,2,3]");
+    }
     try {
         std::string query_params = "?clusterID=" + idlist;
         if (this->get_request(slug, query_params, sensor_id, json_response) != 200) {
@@ -383,10 +421,14 @@ bool amber_sdk::get_root_cause_by_idlist(amber_models::get_root_cause_response &
     return true;
 }
 
-bool amber_sdk::get_root_cause_by_patternlist(amber_models::get_root_cause_response &response, std::string &patternlist,
-                                              std::string &sensor_id) {
+bool amber_sdk::get_root_cause_by_patternlist(amber_models::get_root_cause_response &response, const std::string &sensor_id,
+                                              std::string &patternlist) {
     json json_response;
     std::string slug = "/rootCause";
+    if (patternlist.find(std::string("[[")) == std::string::npos 
+        || patternlist.find(std::string("]]")) == std::string::npos) {
+        throw amber_except("patternlist should be in the form [[1,2,3],[1,2,3]]");
+    }
     try {
         std::string query_params = "?pattern=" + patternlist;
         if (this->get_request(slug, query_params, sensor_id, json_response) != 200) {
@@ -420,7 +462,7 @@ void amber_sdk::common_curl_opts(CURL *curl, std::string &url, struct curl_slist
     }
 }
 
-int amber_sdk::get_request(std::string &slug, std::string &query_params, std::string &sensor_id, json &response) {
+int amber_sdk::get_request(std::string &slug, std::string &query_params, const std::string &sensor_id, json &response) {
 
     reset_last_message();
     if (!this->authenticate(response)) {
@@ -464,7 +506,7 @@ int amber_sdk::get_request(std::string &slug, std::string &query_params, std::st
     return this->last_code;
 }
 
-int amber_sdk::post_request(std::string &slug, std::string &sensor_id, std::string &body, bool do_auth, json &response) {
+int amber_sdk::post_request(std::string &slug, const std::string &sensor_id, std::string &body, bool do_auth, json &response) {
 
     reset_last_message();
     if (do_auth) {
@@ -512,7 +554,7 @@ int amber_sdk::post_request(std::string &slug, std::string &sensor_id, std::stri
     return this->last_code;
 }
 
-int amber_sdk::put_request(std::string &slug, std::string &sensor_id, std::string &body, json &response) {
+int amber_sdk::put_request(std::string &slug, const std::string &sensor_id, std::string &body, json &response) {
 
     reset_last_message();
     if (!this->authenticate(response)) {
@@ -557,7 +599,7 @@ int amber_sdk::put_request(std::string &slug, std::string &sensor_id, std::strin
     return this->last_code;
 }
 
-int amber_sdk::delete_request(std::string &slug, std::string &sensor_id, json &response) {
+int amber_sdk::delete_request(std::string &slug, const std::string &sensor_id, json &response) {
 
     reset_last_message();
     if (!this->authenticate(response)) {

@@ -20,8 +20,29 @@ namespace amber_models {
         std::string username;
         std::string password;
         std::string server;
+        std::string oauthserver;        
 
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(license_entry, username, password, server)
+        friend void to_json(json &j, const license_entry &r) {
+            j["username"] = r.username;
+            j["password"] = r.password;
+            j["server"] = r.server;
+            if (!r.oauthserver.empty()) {
+                j["oauth-server"] = r.oauthserver;
+            } else {
+                j["oauth-server"] = r.server;
+            }
+        }
+
+        friend void from_json(const json &j, license_entry &r) {
+            r.username = j.at("username");
+            r.password = j.at("password");
+            r.server = j.at("server");
+            if (j.contains("oauthserver")) {
+                r.oauthserver = j.at("oauthserver");
+            } else {
+                r.server = j.at("server");
+            }
+        }
 
         void dump() {
             std::string redacted = "********";

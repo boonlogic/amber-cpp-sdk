@@ -53,9 +53,9 @@ unit-test:
     - cd ci-root
     - make amber-cpp-sdk-test
 
-trigger-expert-api:
-  stage: trigger
-  trigger:
-    project: development/expert/expert-api
-    branch: ${CI_COMMIT_REF_NAME}
+# trigger-expert-api:
+#   stage: trigger
+#   trigger:
+#     project: development/expert/expert-api
+#     branch: ${CI_COMMIT_REF_NAME}
 
