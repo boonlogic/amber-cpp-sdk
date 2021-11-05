@@ -265,7 +265,7 @@ namespace {
         std::string csvdata = "1,2,3";
         ASSERT_TRUE(amber->stream_sensor(response, endpoints::get_sid(), csvdata));
         EXPECT_EQ(response.state, "Monitoring");
-        EXPECT_EQ(response.message,"");
+        EXPECT_EQ(response.message, "");
         EXPECT_EQ(response.progress, 0);
         EXPECT_EQ(response.clusterCount, 582);
         EXPECT_EQ(response.retryCount, 0);

@@ -18,7 +18,7 @@ namespace {
             auto *amber = new amber_sdk(NULL, NULL);
             amber_models::list_sensors_response response;
             EXPECT_TRUE(amber->list_sensors(response));
-	    delete amber;
+            delete amber;
         } catch (amber_except &e) {
             ASSERT_TRUE(false) << e.what();
         }
@@ -36,7 +36,7 @@ namespace {
             amber_models::list_sensors_response response;
             EXPECT_FALSE(amber->list_sensors(response));
             unsetenv("AMBER_PASSWORD");
-	    delete amber;
+            delete amber;
         } catch (amber_except &e) {
             ASSERT_TRUE(false) << e.what();
         }

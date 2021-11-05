@@ -6,7 +6,9 @@
 #ifdef _WIN32
 #include <Windows.h>
 #else
+
 #include <unistd.h>
+
 #endif
 
 using json = nlohmann::json;
@@ -63,11 +65,14 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file, bool veri
 
     // first load license file
     this->license_file = getenv("AMBER_LICENSE_FILE") ? getenv("AMBER_LICENSE_FILE") : std::string(license_file);
-    
+
     // next get license ID
     this->license_id = getenv("AMBER_LICENSE_ID") ? getenv("AMBER_LICENSE_ID") : std::string(license_id);
 
-    json amber_entry = {{"username", NULL}, {"password", NULL}, {"server", NULL}, {"oauthserver", NULL}};
+    json amber_entry = {{"username",    NULL},
+                        {"password",    NULL},
+                        {"server",      NULL},
+                        {"oauthserver", NULL}};
 
     // create license profile
     if (!this->license_file.empty()) {
@@ -76,7 +81,7 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file, bool veri
         wordexp_t exp_result;
         wordexp(this->license_file.c_str(), &exp_result, 0);
         this->license_file = exp_result.we_wordv[0];
-	wordfree(&exp_result);
+        wordfree(&exp_result);
 
         // open up license file
         std::ifstream file(this->license_file);
@@ -91,7 +96,8 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file, bool veri
 
             // locate license entry in license file
             if (!license_json.contains(this->license_id)) {
-                throw amber_except("license_id '%s' not found in '%s'", this->license_id.c_str(), this->license_file.c_str());
+                throw amber_except("license_id '%s' not found in '%s'", this->license_id.c_str(),
+                                   this->license_file.c_str());
             }
 
             // rewrite as license_entry structure
@@ -103,7 +109,7 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file, bool veri
             }
         } else {
             // if license file is something other than default, throw exception
-            if (strcmp(license_file, "~/.Amber.license") == 0) {
+            if (strcmp(license_file, "~/.Amber.license") != 0) {
                 throw amber_except("license_file '%s' not found", license_file);
             }
         }
@@ -128,7 +134,7 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file, bool veri
                 this->set_cainfo(getenv("AMBER_SSL_VERIFY"));
             }
         }
-    } catch (json::exception& e) {
+    } catch (json::exception &e) {
         throw amber_except("json failed with exception: %s", e.what());
     }
 
@@ -237,7 +243,8 @@ bool amber_sdk::list_sensors(amber_models::list_sensors_response &response) {
 }
 
 bool
-amber_sdk::update_sensor(amber_models::update_sensor_response &response, const std::string sensor_id, std::string &label) {
+amber_sdk::update_sensor(amber_models::update_sensor_response &response, const std::string sensor_id,
+                         std::string &label) {
     amber_models::update_sensor_request request{label};
     json j = request;
     std::string body = j.dump();
@@ -272,7 +279,8 @@ bool amber_sdk::delete_sensor(const std::string &sensor_id) {
     return true;
 }
 
-bool amber_sdk::stream_sensor(amber_models::stream_sensor_response &response, const std::string &sensor_id, std::string &csvdata) {
+bool amber_sdk::stream_sensor(amber_models::stream_sensor_response &response, const std::string &sensor_id,
+                              std::string &csvdata) {
     amber_models::stream_sensor_request request{csvdata};
     json j = request;
     std::string body = j.dump();
@@ -291,7 +299,8 @@ bool amber_sdk::stream_sensor(amber_models::stream_sensor_response &response, co
     return true;
 }
 
-bool amber_sdk::pretrain_sensor(amber_models::pretrain_sensor_response &response, const std::string &sensor_id, std::string &csvdata, bool autotuneConfig, bool block) {
+bool amber_sdk::pretrain_sensor(amber_models::pretrain_sensor_response &response, const std::string &sensor_id,
+                                std::string &csvdata, bool autotuneConfig, bool block) {
     amber_models::pretrain_sensor_request request{csvdata, autotuneConfig};
     json j = request;
     std::string body = j.dump();
@@ -403,7 +412,7 @@ bool amber_sdk::get_root_cause_by_idlist(amber_models::get_root_cause_response &
     json json_response;
     std::string slug = "/rootCause";
 
-    if (idlist.find(std::string("[")) == std::string::npos 
+    if (idlist.find(std::string("[")) == std::string::npos
         || idlist.find(std::string("]")) == std::string::npos) {
         throw amber_except("idlist should be in the form [1,2,3]");
     }
@@ -421,11 +430,12 @@ bool amber_sdk::get_root_cause_by_idlist(amber_models::get_root_cause_response &
     return true;
 }
 
-bool amber_sdk::get_root_cause_by_patternlist(amber_models::get_root_cause_response &response, const std::string &sensor_id,
-                                              std::string &patternlist) {
+bool
+amber_sdk::get_root_cause_by_patternlist(amber_models::get_root_cause_response &response, const std::string &sensor_id,
+                                         std::string &patternlist) {
     json json_response;
     std::string slug = "/rootCause";
-    if (patternlist.find(std::string("[[")) == std::string::npos 
+    if (patternlist.find(std::string("[[")) == std::string::npos
         || patternlist.find(std::string("]]")) == std::string::npos) {
         throw amber_except("patternlist should be in the form [[1,2,3],[1,2,3]]");
     }
@@ -506,7 +516,8 @@ int amber_sdk::get_request(std::string &slug, std::string &query_params, const s
     return this->last_code;
 }
 
-int amber_sdk::post_request(std::string &slug, const std::string &sensor_id, std::string &body, bool do_auth, json &response) {
+int amber_sdk::post_request(std::string &slug, const std::string &sensor_id, std::string &body, bool do_auth,
+                            json &response) {
 
     reset_last_message();
     if (do_auth) {

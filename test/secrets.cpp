@@ -7,10 +7,12 @@
 #ifdef _WIN32
 #include <Windows.h>
 #else
+
 #include <unistd.h>
+
 #endif
 
-std::string exec(const char* cmd) {
+std::string exec(const char *cmd) {
     std::array<char, 128> buffer;
     std::string result;
     std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
@@ -24,7 +26,8 @@ std::string exec(const char* cmd) {
 }
 
 json get_secrets() {
-    std::string raw_secrets = exec("aws secretsmanager get-secret-value --secret-id amber-test-users --output text --query SecretString");
+    std::string raw_secrets = exec(
+        "aws secretsmanager get-secret-value --secret-id amber-test-users --output text --query SecretString");
     json secrets = json::parse(raw_secrets);
     return secrets;
 }
@@ -65,19 +68,19 @@ void load_credentials_into_env() {
 
 json clear_env_variables() {
 
-    json saved_profile {
+    json saved_profile{
         {"AMBER_LICENSE_FILE", NULL},
-        {"AMBER_LICENSE_ID", NULL},
-        {"AMBER_USERNAME", NULL},
-        {"AMBER_PASSWORD", NULL},
-        {"AMBER_SERVER", NULL},
+        {"AMBER_LICENSE_ID",   NULL},
+        {"AMBER_USERNAME",     NULL},
+        {"AMBER_PASSWORD",     NULL},
+        {"AMBER_SERVER",       NULL},
         {"AMBER_OAUTH_SERVER", NULL},
-        {"AMBER_SSL_CERT", NULL},
-        {"AMBER_SSL_VERIFY", NULL}
+        {"AMBER_SSL_CERT",     NULL},
+        {"AMBER_SSL_VERIFY",   NULL}
     };
 
-    for ( auto it: saved_profile.items() ){
-        if (getenv(it.key().c_str())){
+    for (auto it: saved_profile.items()) {
+        if (getenv(it.key().c_str())) {
             saved_profile[it.key()] = getenv(it.key().c_str());
             unsetenv(it.key().c_str());
         }
@@ -87,13 +90,13 @@ json clear_env_variables() {
 
 void restore_env_variables(json saved_env) {
     // clear out existing environment
-    for ( auto it: env_mappings.items() ){
+    for (auto it: env_mappings.items()) {
         unsetenv(it.key().c_str());
     }
 
     // load environment from saved profile
-    for ( auto it: saved_env.items() ){
-        if (it.value() != NULL){
+    for (auto it: saved_env.items()) {
+        if (it.value() != NULL) {
             setenv(it.key().c_str(), std::string(saved_env[it.key()]).c_str(), 1);
         }
     }
