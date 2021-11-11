@@ -16,6 +16,7 @@ int main(int argc, char *argv[]) {
     std::string my_sensor;
 
     bool verify = true;
+    bool save_image = true;
 
     for (int arg = 1 ; arg < argc ; arg++) {
         std::string str(argv[arg]);
@@ -25,6 +26,10 @@ int main(int argc, char *argv[]) {
 
         if (strcasecmp("noverify", str.c_str()) == 0) {
             verify = false;
+        } else if (strcasecmp("nosave", str.c_str()) == 0) {
+            save_image = false;
+        } else if (strcasecmp("save", str.c_str()) == 0) {
+            save_image = true;
         } else {
             bool help = false;
             if (strcasecmp("help", str.c_str()) == 0) {
@@ -72,7 +77,7 @@ int main(int argc, char *argv[]) {
 
     // configure the sensor
     amber_models::configure_sensor_response configure_sensor_response;
-    if (amber->configure_sensor(configure_sensor_response, my_sensor, 1, 25)) {
+    if (amber->configure_sensor(configure_sensor_response, my_sensor, 1, 25, 10000, 10, 10000, 1000, 1000000, 10000)) {
         configure_sensor_response.dump();
     } else {
         message_and_exit(amber->last_error);
@@ -81,9 +86,9 @@ int main(int argc, char *argv[]) {
     std::ifstream in("examples/output_current.csv");
     std::string line;
     std::string value;
-    uint16_t sample_count;
+    uint16_t sample_count = 0;
     std::string csv_data;
-    uint16_t batch_size = 25;
+    uint16_t batch_size = 10;
     while (getline(in, line)) {
         std::stringstream ss(line);
         while (getline(ss, value, ',')) {
@@ -94,7 +99,7 @@ int main(int argc, char *argv[]) {
             if (sample_count % batch_size == 0) {
                 // stream data to a sensor
                 amber_models::stream_sensor_response stream_sensor_response;
-                if (amber->stream_sensor(stream_sensor_response, my_sensor, csv_data)) {
+                if (amber->stream_sensor(stream_sensor_response, my_sensor, csv_data, save_image)) {
                     stream_sensor_response.dump();
                 } else {
                     std::cout << "error: " << amber->last_error << "\n";
@@ -109,7 +114,7 @@ int main(int argc, char *argv[]) {
     if (sample_count > 0) {
         // stream data to a sensor
         amber_models::stream_sensor_response stream_sensor_response;
-        if (amber->stream_sensor(stream_sensor_response, my_sensor, csv_data)) {
+        if (amber->stream_sensor(stream_sensor_response, my_sensor, csv_data, save_image)) {
             stream_sensor_response.dump();
         } else {
             message_and_exit(amber->last_error);
