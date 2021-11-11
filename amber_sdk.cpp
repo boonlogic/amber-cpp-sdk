@@ -280,8 +280,8 @@ bool amber_sdk::delete_sensor(const std::string &sensor_id) {
 }
 
 bool amber_sdk::stream_sensor(amber_models::stream_sensor_response &response, const std::string &sensor_id,
-                              std::string &csvdata) {
-    amber_models::stream_sensor_request request{csvdata};
+                              std::string &csvdata, bool save_image) {
+    amber_models::stream_sensor_request request{save_image, csvdata};
     json j = request;
     std::string body = j.dump();
     json json_response;

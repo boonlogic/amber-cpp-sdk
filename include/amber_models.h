@@ -232,9 +232,10 @@ namespace amber_models {
 
     class stream_sensor_request {
     public:
+        bool saveImage;
         std::string data;
 
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(stream_sensor_request, data)
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(stream_sensor_request, saveImage, data)
 
         AMBER_DUMP()
     };

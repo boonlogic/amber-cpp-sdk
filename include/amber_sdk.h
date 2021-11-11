@@ -56,7 +56,7 @@ public:
                           uint32_t learning_rate_denominator = 2000, uint16_t learning_max_clusters = 1000,
                           uint64_t learning_max_samples = 1000000, uint32_t anomaly_history_window = 10000);
 
-    bool stream_sensor(amber_models::stream_sensor_response &response, const std::string &sensor_id, std::string &csvdata);
+    bool stream_sensor(amber_models::stream_sensor_response &response, const std::string &sensor_id, std::string &csvdata, bool save_image = true);
 
     bool pretrain_sensor(amber_models::pretrain_sensor_response &response, const std::string &sensor_id, std::string &csvdata, bool autotuneConfig = true, bool block = true);
 
