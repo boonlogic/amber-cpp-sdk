@@ -54,7 +54,8 @@ public:
                           uint16_t feature_count = 1, uint16_t streaming_window_size = 25,
                           uint32_t samples_to_buffer = 1000, uint64_t learning_rate_numerator = 0,
                           uint32_t learning_rate_denominator = 2000, uint16_t learning_max_clusters = 1000,
-                          uint64_t learning_max_samples = 1000000, uint32_t anomaly_history_window = 10000);
+                          uint64_t learning_max_samples = 1000000, uint32_t anomaly_history_window = 10000,
+                          std::vector<amber_models::config_features> features = {});
 
     bool stream_sensor(amber_models::stream_sensor_response &response, const std::string &sensor_id, std::string &csvdata, bool save_image = true);
 

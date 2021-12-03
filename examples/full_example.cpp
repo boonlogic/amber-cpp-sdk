@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
     // set up handler
     amber_sdk *amber;
     try {
-        amber = new amber_sdk("default", "nonexistent-license-file");
+        amber = new amber_sdk("default");
     } catch (amber_except &e) {
         std::cout << e.what() << "\n";
         exit(1);
