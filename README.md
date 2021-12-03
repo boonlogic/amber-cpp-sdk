@@ -75,7 +75,7 @@ $ bin/connect-example
 ```
 
 ## Full Example
-[full-example.cpp](examples/full-example.py)
+[full-example.cpp](examples/full_example.cpp)
 
 The following provides and example of each amber-cpp-sdk method.
 ```
