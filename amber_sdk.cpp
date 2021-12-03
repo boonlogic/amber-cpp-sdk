@@ -185,10 +185,12 @@ bool amber_sdk::configure_sensor(amber_models::configure_sensor_response &respon
                                  uint16_t feature_count, uint16_t streaming_window_size,
                                  uint32_t samples_to_buffer, uint64_t learning_rate_numerator,
                                  uint32_t learning_rate_denominator, uint16_t learning_max_clusters,
-                                 uint64_t learning_max_samples, uint32_t anomaly_history_window) {
+                                 uint64_t learning_max_samples, uint32_t anomaly_history_window,
+                                 std::vector<amber_models::config_features> features) {
     amber_models::configure_sensor_request request{feature_count, streaming_window_size, samples_to_buffer,
                                                    learning_rate_numerator, learning_rate_denominator,
-                                                   learning_max_clusters, learning_max_samples, anomaly_history_window};
+                                                   learning_max_clusters, learning_max_samples, anomaly_history_window,
+                                                   features};
 
     json j = request;
     std::string body = j.dump();

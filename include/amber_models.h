@@ -194,6 +194,16 @@ namespace amber_models {
         AMBER_DUMP()
     };
 
+    struct config_features {
+        float minVal;
+        float maxVal;
+        std::string label;
+
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(config_features, minVal, maxVal, label)
+
+        AMBER_DUMP()
+    };
+
     class configure_sensor_request {
     public:
         uint32_t featureCount;
@@ -204,10 +214,11 @@ namespace amber_models {
         uint16_t learningMaxClusters;
         uint64_t learningMaxSamples;
         uint32_t anomalyHistoryWindow;
+        std::vector<config_features> features;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(configure_sensor_request, featureCount, streamingWindowSize,
                                        samplesToBuffer, learningRateNumerator, learningRateDenominator,
-                                       learningMaxClusters, learningMaxSamples, anomalyHistoryWindow)
+                                       learningMaxClusters, learningMaxSamples, anomalyHistoryWindow, features)
 
         AMBER_DUMP()
     };
@@ -222,10 +233,11 @@ namespace amber_models {
         uint16_t learningMaxClusters;
         uint64_t learningMaxSamples;
         uint32_t anomalyHistoryWindow;
+        std::vector<config_features> features;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(configure_sensor_response, featureCount, streamingWindowSize,
                                        samplesToBuffer, learningRateNumerator, learningRateDenominator,
-                                       learningMaxClusters, learningMaxSamples, anomalyHistoryWindow)
+                                       learningMaxClusters, learningMaxSamples, anomalyHistoryWindow, features)
 
         AMBER_DUMP()
     };
@@ -313,15 +325,6 @@ namespace amber_models {
                 r.message = j.at("message");
             }
         }
-
-        AMBER_DUMP()
-    };
-
-    struct config_features {
-        float minVal;
-        float maxVal;
-
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(config_features, minVal, maxVal)
 
         AMBER_DUMP()
     };

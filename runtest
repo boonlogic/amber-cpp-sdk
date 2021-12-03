@@ -1,0 +1,23 @@
+#!/bin/bash
+
+#
+# simple test driver
+#
+usage() {
+    echo
+    echo "runtest [v1,v1next,aop,aoc,dev,qa]"
+}
+
+if [ $# != 1 ]; then
+    echo "error: enviroment is missing"
+    usage
+    exit 1
+fi
+
+if [ ! -f bin/test_client ]; then
+   echo "project must be built first, run:  cmake . && make "
+   exit 1
+fi
+
+AMBER_TEST_PROFILE=$1 bin/test_client
+

@@ -33,6 +33,7 @@ Make libraries and supporting example scripts:
 make
 ```
 
+[Internal Developers Notes](README-dev.md)
 
 ## Credentials setup
 
@@ -61,9 +62,17 @@ The following example provides a basic proof-of-connectivity:
 Running the connect-example.cpp example should yield output like the following:
 ```
 $ bin/connect-example
-{}
+{
+    "api-version": "/v1",
+    "builder": "712de01c",
+    "expert-api": "55bb36dd",
+    "expert-common": "f65c90bf",
+    "nano-secure": "aac9f5d0",
+    "release": "dev",
+    "swagger-ui": "914af396"
+}
+
 ```
-where the dictionary `{}` lists all sensors that currently exist under the given Boon Amber account.
 
 ## Full Example
 [full-example.cpp](examples/full-example.py)
