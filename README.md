@@ -57,9 +57,9 @@ The ~/.Amber.license file will be consulted by the Amber SDK to find and authent
 
 The following example provides a basic proof-of-connectivity:
 
-[connect-example.cpp](examples/connect-example.cpp)
+[connect_example.cpp](examples/connect_example.cpp)
 
-Running the connect-example.cpp example should yield output like the following:
+Running the bin/connect-example should yield output like the following:
 ```
 $ bin/connect-example
 {
@@ -74,29 +74,10 @@ $ bin/connect-example
 
 ```
 
-## Full Example
-[full-example.cpp](examples/full_example.cpp)
+## Examples
 
-The following provides and example of each amber-cpp-sdk method.
-```
-$ bin/full-example
-{}
-```
-## Advanced CSV file processor
+[full-example.cpp](examples/full_example.cpp) : demonstrates each sdk call (bin/full-example)
 
-The following will process a CSV file using batch-style streaming requests.  Full Amber analytic results will be displayed after each streaming request.  
+[stream-advanced.cpp](examples/stream_advanced.cpp) : streams output_current.csv to Amber and displays analytic results (bin/full-example)
 
-[stream-advanced.cpp](examples/stream_advanced.cpp)<br>
-[output_current.csv](examples/output_current.csv)
-
-```
-$ bin/stream-advanced
-{}
-State: Monitoring(0%), inferences: 20201, clusters: 247, samples: 20275, duration: 228.852
-ID: 29,30,31,32,33,34,35,36,37,38,39,245,41,42,219,44,45,220,47,48,49,50,51,52,1 
-SI: 306,307,307,307,307,307,307,308,308,308,308,308,309,311,315,322,336,364,421,532,350,393,478,345,382 
-AD: 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 
-AH: 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 
-AM: 0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013,0.000013 
-AW: 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 
-```
+[output_current.csv](examples/output_current.csv) : supporting csv file
