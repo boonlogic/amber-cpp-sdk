@@ -24,7 +24,10 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(googletest)
+
 ###########
+
+find_package(ZLIB)
 
 add_library(
         ambersdk
@@ -36,25 +39,26 @@ target_link_libraries(
         ambersdk
         PUBLIC
         curl
+	ZLIB::ZLIB
 )
 
 add_executable(
     connect-example
     examples/connect_example.cpp
 )
-target_link_libraries(connect-example ambersdk curl)
+target_link_libraries(connect-example ambersdk curl ZLIB::ZLIB)
 
 add_executable(
         full-example
         examples/full_example.cpp
 )
-target_link_libraries(full-example ambersdk curl)
+target_link_libraries(full-example ambersdk curl ZLIB::ZLIB)
 
 add_executable(
         stream-advanced
         examples/stream_advanced.cpp
 )
-target_link_libraries(stream-advanced ambersdk curl)
+target_link_libraries(stream-advanced ambersdk curl ZLIB::ZLIB)
 
 ## GTEST ##
 # ctest doesn't play nicely with gtest SetUpTestSuite, disable built-in testing targets
