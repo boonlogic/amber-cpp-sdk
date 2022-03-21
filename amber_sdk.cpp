@@ -2,6 +2,7 @@
 #include <wordexp.h>
 #include <fstream>
 #include <sstream>
+#include <zlib.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -14,6 +15,8 @@
 using json = nlohmann::json;
 
 const char *user_agent = "User-Agent: amber-cpp-sdk";
+
+std::string compress_string(const std::string& str);
 
 /**
  * Main client which interfaces with the Amber cloud. Amber account
@@ -530,6 +533,7 @@ int amber_sdk::post_request(std::string &slug, const std::string &sensor_id, std
     CURL *curl;
     curl = curl_easy_init();
 
+
     // set up request
     std::string read_buffer;
     std::string url = this->license.server + slug;
@@ -542,6 +546,11 @@ int amber_sdk::post_request(std::string &slug, const std::string &sensor_id, std
     if (!sensor_id.empty()) {
         auto sensor_header = std::string("sensorId:" + sensor_id);
         hs = curl_slist_append(hs, sensor_header.c_str());
+    }
+    // compress payload if greater than 10000 bytes in length
+    if (body.length() > 10000) {
+        body = compress_string(body);
+        hs = curl_slist_append(hs, "Content-Encoding: gzip");
     }
     common_curl_opts(curl, url, hs, &read_buffer);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
@@ -694,4 +703,47 @@ bool amber_sdk::authenticate(json &response) {
         return false;
     }
     return true;
+}
+
+std::string compress_string(const std::string& str)
+{
+    int compressionlevel = Z_BEST_COMPRESSION;
+    z_stream zs;
+    memset(&zs, 0, sizeof(zs));
+
+    // gzip init
+    if (deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
+        throw (std::runtime_error("deflateInit failed while compressing."));
+    }
+
+    zs.next_in = (Bytef*)str.data();
+    zs.avail_in = str.size();           // set the z_stream's input
+
+    int ret;
+    char outbuffer[32768];
+    std::string outstring;
+
+    // retrieve the compressed bytes blockwise
+    do {
+        zs.next_out = reinterpret_cast<Bytef*>(outbuffer);
+        zs.avail_out = sizeof(outbuffer);
+
+        ret = deflate(&zs, Z_FINISH);
+
+        if (outstring.size() < zs.total_out) {
+            // append the block to the output string
+            outstring.append(outbuffer,
+                             zs.total_out - outstring.size());
+        }
+    } while (ret == Z_OK);
+
+    deflateEnd(&zs);
+
+    if (ret != Z_STREAM_END) {          // an error occurred that was not EOF
+        std::ostringstream oss;
+        oss << "Exception during zlib compression: (" << ret << ") " << zs.msg;
+        throw(std::runtime_error(oss.str()));
+    }
+
+    return outstring;
 }

@@ -251,7 +251,7 @@ namespace {
         amber_models::get_status_response response;
         ASSERT_TRUE(amber->get_status(response, endpoints::get_sid()));
         EXPECT_TRUE(response.pca.size() != 0);
-        EXPECT_EQ(response.numClusters, 582);
+        EXPECT_EQ(response.numClusters, 581);
     }
 
     TEST_F(endpoints, GetStatusNegative) {
@@ -267,7 +267,7 @@ namespace {
         EXPECT_EQ(response.state, "Monitoring");
         EXPECT_EQ(response.message, "");
         EXPECT_EQ(response.progress, 0);
-        EXPECT_EQ(response.clusterCount, 582);
+        EXPECT_EQ(response.clusterCount, 581);
         EXPECT_EQ(response.retryCount, 0);
         EXPECT_EQ(response.streamingWindowSize, 25);
         /*
