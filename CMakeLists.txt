@@ -73,6 +73,20 @@ add_executable(
 )
 target_link_libraries(test_client gtest_main ambersdk)
 
+add_custom_target(
+	format
+	COMMAND clang-format
+	-style=LLVM
+	-i
+	amber_sdk.cpp include/*.h test/*.cpp examples/*.cpp
+)
+
+add_custom_target(
+	format-check
+	DEPENDS format
+	COMMAND git diff --exit-code
+)
+
 include(GoogleTest)
 gtest_discover_tests(test_client)
 ###########
