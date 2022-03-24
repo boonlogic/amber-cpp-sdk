@@ -20,7 +20,7 @@ variables:
 stages:
   - build
   - self-test
-  - trigger
+  - system-test
   
 build:
   stage: build
@@ -43,19 +43,31 @@ code-check:
     - expert-docker
   script:
     - cd ci-root
-    - echo "code-check passed during build step"
+    - make amber-cpp-sdk-code-check
 
-unit-test:
-  stage: self-test
-  tags:
-    - expert-docker
-  script:
-    - cd ci-root
-    - make amber-cpp-sdk-test
+#system-test-aol:
+#  stage: system-test
+#  trigger:
+#    include:
+#      - project: 'development/builder'
+#        file: 'pipelines/base/pipeline.yml'
+#      - project: 'development/builder'
+#        file: '/pipelines/expert-api/system-test.yml'
 
-# trigger-expert-api:
-#   stage: trigger
-#   trigger:
-#     project: development/expert/expert-api
-#     branch: ${CI_COMMIT_REF_NAME}
+#system-test-aop-sw:
+#  stage: system-test
+#  trigger:
+#    include:
+#      - project: 'development/builder'
+#        file: 'pipelines/base/pipeline.yml'
+#      - project: 'development/builder'
+#        file: '/pipelines/expert-api/system-test.yml'
 
+#system-test-aop-sgx:
+#  stage: system-test
+#  trigger:
+#    include:
+#      - project: 'development/builder'
+#        file: 'pipelines/base/pipeline.yml'
+#      - project: 'development/builder'
+#        file: '/pipelines/expert-api/system-test.yml'
