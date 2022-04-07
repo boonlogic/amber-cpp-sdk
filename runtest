@@ -19,5 +19,5 @@ if [ ! -f bin/test_client ]; then
    exit 1
 fi
 
-AMBER_TEST_PROFILE=$1 bin/test_client
+AMBER_TEST_LICENSE_ID=$1 bin/test_client
 

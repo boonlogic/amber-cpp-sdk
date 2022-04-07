@@ -20,14 +20,14 @@ public:
   std::string username;
   std::string password;
   std::string server;
-  std::string oauthserver;
+  std::string oauth_server;
 
   friend void to_json(json &j, const license_entry &r) {
     j["username"] = r.username;
     j["password"] = r.password;
     j["server"] = r.server;
-    if (!r.oauthserver.empty()) {
-      j["oauth-server"] = r.oauthserver;
+    if (!r.oauth_server.empty()) {
+      j["oauth-server"] = r.oauth_server;
     } else {
       j["oauth-server"] = r.server;
     }
@@ -37,8 +37,8 @@ public:
     r.username = j.at("username");
     r.password = j.at("password");
     r.server = j.at("server");
-    if (j.contains("oauthserver")) {
-      r.oauthserver = j.at("oauthserver");
+    if (j.contains("oauth-server")) {
+      r.oauth_server = j.at("oauth-server");
     } else {
       r.server = j.at("server");
     }

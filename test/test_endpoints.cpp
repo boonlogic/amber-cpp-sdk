@@ -15,11 +15,7 @@ protected:
   static amber_sdk *amber;
   static std::string sensor_id;
 
-  static void SetUpTestSuite() {
-    json saved_env = clear_env_variables();
-    load_credentials_into_env();
-    amber = new amber_sdk(NULL, NULL);
-  }
+  static void SetUpTestSuite() { amber = create_amber_client(); }
 
   static void TearDownTestSuite() { delete amber; }
 

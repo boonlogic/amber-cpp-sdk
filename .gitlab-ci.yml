@@ -20,8 +20,9 @@ variables:
 stages:
   - build
   - self-test
-  - system-test
-  
+  - test-setup
+  - test
+
 build:
   stage: build
   tags:
@@ -45,29 +46,57 @@ code-check:
     - cd ci-root
     - make amber-cpp-sdk-code-check
 
-#system-test-aol:
-#  stage: system-test
-#  trigger:
-#    include:
-#      - project: 'development/builder'
-#        file: 'pipelines/base/pipeline.yml'
-#      - project: 'development/builder'
-#        file: '/pipelines/expert-api/system-test.yml'
+test-setup:
+  stage: test-setup
+  tags:
+    - expert-docker
+  script:
+    - cd ci-root
+    - BRANCH=${CI_COMMIT_REF_NAME} make amber-cli-env
+    - make amber-cli-build
+    - BRANCH=${CI_COMMIT_REF_NAME} make expert-api-env
+    - make expert-api-build
+  artifacts:
+    paths:
+      - ci-root/packages/amber-cli
+      - ci-root/packages/expert-server
 
-#system-test-aop-sw:
-#  stage: system-test
-#  trigger:
-#    include:
-#      - project: 'development/builder'
-#        file: 'pipelines/base/pipeline.yml'
-#      - project: 'development/builder'
-#        file: '/pipelines/expert-api/system-test.yml'
+test-aol:
+  stage: test
+  tags:
+    - expert-docker
+  before_script:
+    - export PATH=~/.local/bin:$PATH
+    - cd ci-root/packages/amber-cli/amber-cli
+    - export API_ID="qa-${CI_JOB_ID}"
+    - ./amber aws create-test-config --api ${API_ID} > ${CI_PROJECT_DIR}/ci-root/packages/amber-cpp-sdk/amber-cpp-sdk/Amber.license
+    - ./amber aws create-deployment --function dev:${API_ID} --release rel-0.0.598
+    - echo -n "*** sleep for 30 seconds to allow api gateway to be fully up... " && sleep 30 && echo "(done)"
+    - cd ${CI_PROJECT_DIR}/ci-root/packages/expert-server/expert-api
+    - make deploy-amber-lambda-${API_ID}
+    - echo -n "*** sleep for 5 seconds to allow lambda to be fully up... " && sleep 5 && echo "(done)"
+  script:
+    - cd ${CI_PROJECT_DIR}/ci-root/packages/amber-cpp-sdk/amber-cpp-sdk
+    - export AMBER_TEST_LICENSE_FILE=${PWD}/Amber.license
+    - export AMBER_TEST_LICENSE_ID=aol
+    - bin/test_client
+  after_script:
+    - export API_ID="qa-${CI_JOB_ID}"
+    - cd ci-root/packages/amber-cli/amber-cli
+    - ./amber aws delete-deployment --function dev:${API_ID}
 
-#system-test-aop-sgx:
-#  stage: system-test
-#  trigger:
-#    include:
-#      - project: 'development/builder'
-#        file: 'pipelines/base/pipeline.yml'
-#      - project: 'development/builder'
-#        file: '/pipelines/expert-api/system-test.yml'
+test-aoc:
+  stage: test
+  tags:
+    - expert-docker
+  before_script:
+    - cd ci-root/packages/amber-cli/amber-cli
+    - ./amber aop create-test-config --port 9876 > ${CI_PROJECT_DIR}/ci-root/packages/amber-cpp-sdk/amber-cpp-sdk/Amber.license
+    - cd ${CI_PROJECT_DIR}/ci-root/packages/expert-server/expert-api
+    - export PORT=9876
+    - make start-amber-cloud
+  script:
+    - cd ${CI_PROJECT_DIR}/ci-root/packages/amber-cpp-sdk/amber-cpp-sdk
+    - export AMBER_TEST_LICENSE_FILE=${PWD}/Amber.license
+    - export AMBER_TEST_LICENSE_ID=aoc
+    - bin/test_client
