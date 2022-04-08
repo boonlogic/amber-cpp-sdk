@@ -81,7 +81,7 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file,
   json amber_entry = {{"username", NULL},
                       {"password", NULL},
                       {"server", NULL},
-                      {"oauthserver", NULL}};
+                      {"oauth-server", NULL}};
 
   // create license profile
   if (!this->license_file.empty()) {
@@ -132,9 +132,12 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file,
                                                       : this->license.password;
     this->license.server =
         getenv("AMBER_SERVER") ? getenv("AMBER_SERVER") : this->license.server;
-    this->license.oauthserver = getenv("AMBER_OAUTH_SERVER")
-                                    ? getenv("AMBER_OAUTH_SERVER")
-                                    : this->license.server;
+    this->license.oauth_server = getenv("AMBER_OAUTH_SERVER")
+                                     ? getenv("AMBER_OAUTH_SERVER")
+                                     : this->license.oauth_server;
+    if (this->license.oauth_server.length() == 0) {
+      this->license.oauth_server = this->license.server;
+    }
     this->set_cert(getenv("AMBER_SSL_CERT") ? getenv("AMBER_SSL_CERT") : cert);
 
     this->verify_certificate(verify_cert);
@@ -184,8 +187,9 @@ bool amber_sdk::create_sensor(amber_models::create_sensor_response &response,
   json json_response;
   std::string no_sensor;
   std::string slug = "/sensor";
+  std::string url = this->license.server + slug;
   try {
-    if (this->post_request(slug, no_sensor, body, true, json_response) != 200) {
+    if (this->post_request(url, no_sensor, body, true, json_response) != 200) {
       return false;
     }
     response = json_response.get<amber_models::create_sensor_response>();
@@ -213,8 +217,9 @@ bool amber_sdk::configure_sensor(
   std::string body = j.dump();
   json json_response;
   std::string slug = "/config";
+  std::string url = this->license.server + slug;
   try {
-    if (this->post_request(slug, sensor_id, body, true, json_response) != 200) {
+    if (this->post_request(url, sensor_id, body, true, json_response) != 200) {
       return false;
     }
     response = json_response.get<amber_models::configure_sensor_response>();
@@ -229,10 +234,10 @@ bool amber_sdk::get_sensor(amber_models::get_sensor_response &response,
                            const std::string &sensor_id) {
   json json_response;
   std::string slug = "/sensor";
+  std::string url = this->license.server + slug;
   try {
     std::string query_params;
-    if (this->get_request(slug, query_params, sensor_id, json_response) !=
-        200) {
+    if (this->get_request(url, query_params, sensor_id, json_response) != 200) {
       return false;
     }
     response = json_response.get<amber_models::get_sensor_response>();
@@ -247,10 +252,10 @@ bool amber_sdk::list_sensors(amber_models::list_sensors_response &response) {
   json json_response;
   std::string no_sensor;
   std::string slug = "/sensors";
+  std::string url = this->license.server + slug;
   try {
     std::string query_params;
-    if (this->get_request(slug, query_params, no_sensor, json_response) !=
-        200) {
+    if (this->get_request(url, query_params, no_sensor, json_response) != 200) {
       return false;
     }
     response = json_response.get<amber_models::list_sensors_response>();
@@ -268,8 +273,9 @@ bool amber_sdk::update_sensor(amber_models::update_sensor_response &response,
   std::string body = j.dump();
   json json_response;
   std::string slug = "/sensor";
+  std::string url = this->license.server + slug;
   try {
-    if (this->put_request(slug, sensor_id, body, json_response) != 200) {
+    if (this->put_request(url, sensor_id, body, json_response) != 200) {
       return false;
     }
     response = json_response.get<amber_models::update_sensor_response>();
@@ -283,9 +289,9 @@ bool amber_sdk::update_sensor(amber_models::update_sensor_response &response,
 bool amber_sdk::delete_sensor(const std::string &sensor_id) {
   json json_response;
   std::string slug = "/sensor";
-
+  std::string url = this->license.server + slug;
   try {
-    if (this->delete_request(slug, sensor_id, json_response) != 200) {
+    if (this->delete_request(url, sensor_id, json_response) != 200) {
       return false;
     }
   } catch (const std::exception &e) {
@@ -303,8 +309,9 @@ bool amber_sdk::stream_sensor(amber_models::stream_sensor_response &response,
   std::string body = j.dump();
   json json_response;
   std::string slug = "/stream";
+  std::string url = this->license.server + slug;
   try {
-    if (this->post_request(slug, sensor_id, body, true, json_response) != 200) {
+    if (this->post_request(url, sensor_id, body, true, json_response) != 200) {
       return false;
     }
     response = json_response.get<amber_models::stream_sensor_response>();
@@ -324,9 +331,10 @@ bool amber_sdk::pretrain_sensor(
   std::string body = j.dump();
   json json_response;
   std::string slug = "/pretrain";
+  std::string url = this->license.server + slug;
   try {
     int response_code =
-        this->post_request(slug, sensor_id, body, true, json_response);
+        this->post_request(url, sensor_id, body, true, json_response);
     if (response_code != 200 && response_code != 202) {
       return false;
     }
@@ -360,10 +368,11 @@ bool amber_sdk::get_pretrain(amber_models::get_pretrain_response &response,
                              const std::string &sensor_id) {
   json json_response;
   std::string slug = "/pretrain";
+  std::string url = this->license.server + slug;
   try {
     std::string query_params;
     int response_code =
-        this->get_request(slug, query_params, sensor_id, json_response);
+        this->get_request(url, query_params, sensor_id, json_response);
     if (response_code != 200 && response_code != 202) {
       return false;
     }
@@ -379,10 +388,10 @@ bool amber_sdk::get_config(amber_models::get_config_response &response,
                            const std::string &sensor_id) {
   json json_response;
   std::string slug = "/config";
+  std::string url = this->license.server + slug;
   try {
     std::string query_params;
-    if (this->get_request(slug, query_params, sensor_id, json_response) !=
-        200) {
+    if (this->get_request(url, query_params, sensor_id, json_response) != 200) {
       return false;
     }
     response = json_response.get<amber_models::get_config_response>();
@@ -397,10 +406,10 @@ bool amber_sdk::get_version(amber_models::get_version_response &response) {
   json json_response;
   std::string no_sensor;
   std::string slug = "/version";
+  std::string url = this->license.server + slug;
   try {
     std::string query_params;
-    if (this->get_request(slug, query_params, no_sensor, json_response) !=
-        200) {
+    if (this->get_request(url, query_params, no_sensor, json_response) != 200) {
       return false;
     }
     response = json_response.get<amber_models::get_version_response>();
@@ -415,10 +424,10 @@ bool amber_sdk::get_status(amber_models::get_status_response &response,
                            const std::string &sensor_id) {
   json json_response;
   std::string slug = "/status";
+  std::string url = this->license.server + slug;
   try {
     std::string query_params;
-    if (this->get_request(slug, query_params, sensor_id, json_response) !=
-        200) {
+    if (this->get_request(url, query_params, sensor_id, json_response) != 200) {
       return false;
     }
     response = json_response.get<amber_models::get_status_response>();
@@ -434,6 +443,7 @@ bool amber_sdk::get_root_cause_by_idlist(
     const std::string &sensor_id, std::string &idlist) {
   json json_response;
   std::string slug = "/rootCause";
+  std::string url = this->license.server + slug;
 
   if (idlist.find(std::string("[")) == std::string::npos ||
       idlist.find(std::string("]")) == std::string::npos) {
@@ -441,8 +451,7 @@ bool amber_sdk::get_root_cause_by_idlist(
   }
   try {
     std::string query_params = "?clusterID=" + idlist;
-    if (this->get_request(slug, query_params, sensor_id, json_response) !=
-        200) {
+    if (this->get_request(url, query_params, sensor_id, json_response) != 200) {
       return false;
     }
     response = json_response.get<amber_models::get_root_cause_response>();
@@ -458,14 +467,14 @@ bool amber_sdk::get_root_cause_by_patternlist(
     const std::string &sensor_id, std::string &patternlist) {
   json json_response;
   std::string slug = "/rootCause";
+  std::string url = this->license.server + slug;
   if (patternlist.find(std::string("[[")) == std::string::npos ||
       patternlist.find(std::string("]]")) == std::string::npos) {
     throw amber_except("patternlist should be in the form [[1,2,3],[1,2,3]]");
   }
   try {
     std::string query_params = "?pattern=" + patternlist;
-    if (this->get_request(slug, query_params, sensor_id, json_response) !=
-        200) {
+    if (this->get_request(url, query_params, sensor_id, json_response) != 200) {
       return false;
     }
     response = json_response.get<amber_models::get_root_cause_response>();
@@ -495,7 +504,7 @@ void amber_sdk::common_curl_opts(CURL *curl, std::string &url,
   }
 }
 
-int amber_sdk::get_request(std::string &slug, std::string &query_params,
+int amber_sdk::get_request(std::string &url, std::string &query_params,
                            const std::string &sensor_id, json &response) {
 
   reset_last_message();
@@ -506,7 +515,6 @@ int amber_sdk::get_request(std::string &slug, std::string &query_params,
   curl = curl_easy_init();
 
   std::string read_buffer;
-  std::string url = this->license.server + slug;
   url += query_params;
 
   struct curl_slist *hs = nullptr;
@@ -541,7 +549,7 @@ int amber_sdk::get_request(std::string &slug, std::string &query_params,
   return this->last_code;
 }
 
-int amber_sdk::post_request(std::string &slug, const std::string &sensor_id,
+int amber_sdk::post_request(std::string &url, const std::string &sensor_id,
                             std::string &body, bool do_auth, json &response) {
 
   reset_last_message();
@@ -555,7 +563,6 @@ int amber_sdk::post_request(std::string &slug, const std::string &sensor_id,
 
   // set up request
   std::string read_buffer;
-  std::string url = this->license.server + slug;
   struct curl_slist *hs = nullptr;
   hs = curl_slist_append(hs, "Content-Type: application/json");
   if (do_auth) {
@@ -596,7 +603,7 @@ int amber_sdk::post_request(std::string &slug, const std::string &sensor_id,
   return this->last_code;
 }
 
-int amber_sdk::put_request(std::string &slug, const std::string &sensor_id,
+int amber_sdk::put_request(std::string &url, const std::string &sensor_id,
                            std::string &body, json &response) {
 
   reset_last_message();
@@ -609,7 +616,6 @@ int amber_sdk::put_request(std::string &slug, const std::string &sensor_id,
 
   // set up request
   std::string read_buffer;
-  std::string url = this->license.server + slug;
   struct curl_slist *hs = nullptr;
   hs = curl_slist_append(hs, "Content-Type: application/json");
   hs = curl_slist_append(hs, this->auth_bear_header.c_str());
@@ -643,7 +649,7 @@ int amber_sdk::put_request(std::string &slug, const std::string &sensor_id,
   return this->last_code;
 }
 
-int amber_sdk::delete_request(std::string &slug, const std::string &sensor_id,
+int amber_sdk::delete_request(std::string &url, const std::string &sensor_id,
                               json &response) {
 
   reset_last_message();
@@ -656,7 +662,6 @@ int amber_sdk::delete_request(std::string &slug, const std::string &sensor_id,
 
   // set up request
   std::string read_buffer;
-  std::string url = this->license.server + slug;
   struct curl_slist *hs = nullptr;
   hs = curl_slist_append(hs, "Content-Type: application/json");
   hs = curl_slist_append(hs, this->auth_bear_header.c_str());
@@ -710,9 +715,9 @@ bool amber_sdk::authenticate(json &response) {
   // post request
   std::string no_sensor;
   std::string slug = "/oauth2";
+  std::string url = this->license.oauth_server + slug;
   try {
-    this->last_code =
-        this->post_request(slug, no_sensor, body, false, response);
+    this->last_code = this->post_request(url, no_sensor, body, false, response);
     if (this->last_code != 200) {
       // client-side issue
       return false;

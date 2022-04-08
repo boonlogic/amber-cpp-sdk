@@ -12,6 +12,44 @@
 
 #endif
 
+amber_sdk *create_amber_client() {
+
+  amber_sdk *ac;
+  char *amber_license_file = getenv("AMBER_TEST_LICENSE_FILE");
+  char *amber_license_id = getenv("AMBER_TEST_LICENSE_ID");
+  if (!amber_license_id) {
+    assert("AMBER_TEST_LICENSE_ID required in environment");
+  }
+
+  // purge AMBER environment variables
+  clear_env_variables();
+
+  if (amber_license_file) {
+    // load license profile using a local license file
+    ac = new amber_sdk(amber_license_id, amber_license_file);
+  } else {
+    // load license profile from secrets manager
+    json secrets = get_secrets();
+    if (!secrets.contains(amber_license_id)) {
+      assert("invalid license identifier");
+    }
+    setenv("AMBER_USERNAME",
+           std::string(secrets[amber_license_id]["username"]).c_str(), 1);
+    setenv("AMBER_PASSWORD",
+           std::string(secrets[amber_license_id]["password"]).c_str(), 1);
+    setenv("AMBER_SERVER",
+           std::string(secrets[amber_license_id]["server"]).c_str(), 1);
+    setenv("AMBER_OAUTH_SERVER",
+           secrets[amber_license_id].contains("oauth-server")
+               ? std::string(secrets[amber_license_id]["oauth-server"]).c_str()
+               : std::string(secrets[amber_license_id]["server"]).c_str(),
+           1);
+    ac = new amber_sdk(NULL, NULL);
+  }
+
+  return ac;
+}
+
 std::string exec(const char *cmd) {
   std::array<char, 128> buffer;
   std::string result;
@@ -31,45 +69,6 @@ json get_secrets() {
            "--output text --query SecretString");
   json secrets = json::parse(raw_secrets);
   return secrets;
-}
-
-void load_credentials_into_env() {
-  char *license_file = getenv("AMBER_TEST_FILE");
-  if (license_file) {
-    // load profile for testing using the AMBER_TEST_FILE env file
-    try {
-      amber_sdk *amber = new amber_sdk(NULL, license_file, false, NULL, NULL);
-      setenv("AMBER_USERNAME", amber->license.username.c_str(), 1);
-      setenv("AMBER_PASSWORD", amber->license.password.c_str(), 1);
-      setenv("AMBER_SERVER", amber->license.server.c_str(), 1);
-      setenv("AMBER_OATH_SERVER", amber->license.oauthserver.c_str(), 1);
-      delete amber;
-    } catch (amber_except &e) {
-      assert("Exception loading AMBER_TEST_FILE");
-    }
-  } else {
-    // load profile for testing through secrets manager
-    char *profile = getenv("AMBER_TEST_PROFILE");
-    if (!profile) {
-      assert("AMBER_TEST_FILE or AMBER_TEST_PROFILE are required in the "
-             "environment");
-    }
-    json secrets = get_secrets();
-    if (!secrets.contains(profile)) {
-      assert("invalid license identifier");
-    }
-
-    setenv("AMBER_USERNAME", std::string(secrets[profile]["username"]).c_str(),
-           1);
-    setenv("AMBER_PASSWORD", std::string(secrets[profile]["password"]).c_str(),
-           1);
-    setenv("AMBER_SERVER", std::string(secrets[profile]["server"]).c_str(), 1);
-    setenv("AMBER_OAUTH_SERVER",
-           secrets[profile].contains("oauth-server")
-               ? std::string(secrets[profile]["oauth-server"]).c_str()
-               : std::string(secrets[profile]["server"]).c_str(),
-           1);
-  }
 }
 
 json clear_env_variables() {

@@ -9,9 +9,7 @@
 
 namespace {
 
-TEST(amber_sdk, Environment) {
-  ASSERT_TRUE(getenv("AMBER_TEST_PROFILE") || getenv("AMBER_TEST_FILE"));
-}
+TEST(amber_sdk, Environment) { ASSERT_TRUE(getenv("AMBER_TEST_LICENSE_ID")); }
 
 TEST(amber_sdk, Constructors) {
 
@@ -25,7 +23,7 @@ TEST(amber_sdk, Constructors) {
     ASSERT_EQ(amber->license.username, "admin");
     ASSERT_EQ(amber->license.password, "admin");
     ASSERT_EQ(amber->license.server, "http://localhost:5007/v1");
-    ASSERT_EQ(amber->license.oauthserver, "http://localhost:5007/v1");
+    ASSERT_EQ(amber->license.oauth_server, "http://localhost:5007/v1");
     delete amber;
   } catch (amber_except &e) {
     ASSERT_TRUE(false) << e.what();
@@ -39,7 +37,7 @@ TEST(amber_sdk, Constructors) {
     ASSERT_EQ(amber->license.username, "admin");
     ASSERT_EQ(amber->license.password, "admin");
     ASSERT_EQ(amber->license.server, "http://localhost:5007/v1");
-    ASSERT_EQ(amber->license.oauthserver, "http://localhost:5007/v1");
+    ASSERT_EQ(amber->license.oauth_server, "http://localhost:5007/v1");
     delete amber;
   } catch (amber_except &e) {
     ASSERT_TRUE(false) << e.what();

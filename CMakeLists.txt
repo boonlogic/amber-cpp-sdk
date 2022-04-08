@@ -18,9 +18,9 @@ include_directories(include /usr/local/Cellar/curl/7.78.0/include)
 ## Google test framework ##
 include(FetchContent)
 FetchContent_Declare(
-  googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG release-1.11.0
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG release-1.11.0
 )
 
 FetchContent_MakeAvailable(googletest)
@@ -39,12 +39,12 @@ target_link_libraries(
         ambersdk
         PUBLIC
         curl
-	ZLIB::ZLIB
+        ZLIB::ZLIB
 )
 
 add_executable(
-    connect-example
-    examples/connect_example.cpp
+        connect-example
+        examples/connect_example.cpp
 )
 target_link_libraries(connect-example ambersdk curl ZLIB::ZLIB)
 
@@ -65,26 +65,26 @@ target_link_libraries(stream-advanced ambersdk curl ZLIB::ZLIB)
 # enable_testing()
 
 add_executable(
-  test_client
-  test/test_init.cpp
-  test/test_authenticate.cpp
-  test/test_endpoints.cpp
-  test/secrets.cpp
+        test_client
+        test/test_init.cpp
+        test/test_authenticate.cpp
+        test/test_endpoints.cpp
+        test/secrets.cpp
 )
 target_link_libraries(test_client gtest_main ambersdk)
 
 add_custom_target(
-	format
-	COMMAND clang-format
-	-style=LLVM
-	-i
-	amber_sdk.cpp include/*.h test/*.cpp examples/*.cpp
+        format
+        COMMAND clang-format
+        -style=LLVM
+        -i
+        amber_sdk.cpp include/*.h test/*.cpp examples/*.cpp
 )
 
 add_custom_target(
-	format-check
-	DEPENDS format
-	COMMAND git diff --exit-code
+        format-check
+        DEPENDS format
+        COMMAND git diff --exit-code
 )
 
 include(GoogleTest)
