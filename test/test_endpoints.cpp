@@ -312,6 +312,45 @@ TEST_F(endpoints, GetRootCauseNegative) {
       amber_except);
 }
 
+TEST_F(endpoints, EnableLearning) {
+  amber_models::enable_learning_response expected;
+  expected.streaming.anomalyHistoryWindow = 1000;
+  expected.streaming.learningRateNumerator = 10;
+  expected.streaming.learningRateDenominator = 10000;
+  expected.streaming.learningMaxClusters = 1000;
+  expected.streaming.learningMaxSamples = 1000000;
+
+  amber_models::enable_learning_response response;
+  ASSERT_TRUE(amber->enable_learning(response, endpoints::get_sid(), 1000, 10,
+                                     10000, 1000, 1000000));
+
+  EXPECT_EQ(expected.streaming.anomalyHistoryWindow,
+            response.streaming.anomalyHistoryWindow);
+  EXPECT_EQ(expected.streaming.learningRateNumerator,
+            response.streaming.learningRateNumerator);
+  EXPECT_EQ(expected.streaming.learningRateDenominator,
+            response.streaming.learningRateDenominator);
+  EXPECT_EQ(expected.streaming.learningMaxClusters,
+            response.streaming.learningMaxClusters);
+  EXPECT_EQ(expected.streaming.learningMaxSamples,
+            response.streaming.learningMaxSamples);
+}
+
+TEST_F(endpoints, EnableLearningNegative) {
+  amber_models::enable_learning_response response;
+  std::string badSensor = "bogus-sensor";
+  ASSERT_FALSE(amber->enable_learning(response, badSensor, 1000, 10, 10000,
+                                      1000, 1000000));
+
+  // sensor is not in learning or monitoring
+  amber_models::configure_sensor_response config_response;
+  ASSERT_TRUE(amber->configure_sensor(config_response, endpoints::get_sid(), 1,
+                                      25, 1000, 10, 10000, 1000, 1000000,
+                                      1000));
+  ASSERT_FALSE(amber->enable_learning(response, endpoints::get_sid(), 1000, 10,
+                                      10000, 1000, 1000000));
+}
+
 TEST_F(endpoints, DeleteSensor) {
   ASSERT_TRUE(amber->delete_sensor(endpoints::get_sid()));
 }
