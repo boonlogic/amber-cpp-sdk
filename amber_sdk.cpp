@@ -322,6 +322,33 @@ bool amber_sdk::stream_sensor(amber_models::stream_sensor_response &response,
   return true;
 }
 
+bool amber_sdk::enable_learning(
+    amber_models::enable_learning_response &response,
+    const std::string &sensor_id, uint32_t anomaly_history_window,
+    uint64_t learning_rate_numerator, uint32_t learning_rate_denominator,
+    uint16_t learning_max_clusters, uint64_t learning_max_samples) {
+  amber_models::enable_learning_request request{
+      learning_rate_numerator, learning_rate_denominator, learning_max_clusters,
+      learning_max_samples, anomaly_history_window};
+
+  json j = request;
+  std::string body = j.dump();
+  json json_response;
+  std::string slug = "/config";
+  std::string url = this->license.server + slug;
+  int code;
+  try {
+    if (this->put_request(url, sensor_id, body, json_response) != 200) {
+      return false;
+    }
+    response = json_response.get<amber_models::enable_learning_response>();
+  } catch (const std::exception &e) {
+    fprintf(stderr, "%s\n", e.what());
+    return false;
+  }
+  return true;
+}
+
 bool amber_sdk::pretrain_sensor(
     amber_models::pretrain_sensor_response &response,
     const std::string &sensor_id, std::string &csvdata, bool autotuneConfig,

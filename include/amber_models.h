@@ -280,6 +280,39 @@ public:
   AMBER_DUMP()
 };
 
+class streaming_parameters {
+public:
+  uint64_t learningRateNumerator;
+  uint64_t learningRateDenominator;
+  uint16_t learningMaxClusters;
+  uint64_t learningMaxSamples;
+  uint32_t anomalyHistoryWindow;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(streaming_parameters, anomalyHistoryWindow,
+                                 learningRateNumerator, learningRateDenominator,
+                                 learningMaxClusters, learningMaxSamples)
+
+  AMBER_DUMP()
+};
+
+class enable_learning_request {
+public:
+  streaming_parameters streaming;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(enable_learning_request, streaming)
+
+  AMBER_DUMP()
+};
+
+class enable_learning_response {
+public:
+  streaming_parameters streaming;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(enable_learning_response, streaming)
+
+  AMBER_DUMP()
+};
+
 class pretrain_sensor_request {
 public:
   std::string data;

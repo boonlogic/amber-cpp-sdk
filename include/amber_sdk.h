@@ -71,6 +71,14 @@ public:
                      const std::string &sensor_id, std::string &csvdata,
                      bool save_image = true);
 
+  bool enable_learning(amber_models::enable_learning_response &response,
+                       const std::string &sensor_id,
+                       uint32_t anomaly_history_window = 10000,
+                       uint64_t learning_rate_numerator = 0,
+                       uint32_t learning_rate_denominator = 2000,
+                       uint16_t learning_max_clusters = 1000,
+                       uint64_t learning_max_samples = 1000000);
+
   bool pretrain_sensor(amber_models::pretrain_sensor_response &response,
                        const std::string &sensor_id, std::string &csvdata,
                        bool autotuneConfig = true, bool block = true);
