@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
   }
 
   // get the version
-  amber_models::get_version_response get_version_response;
+  version_response get_version_response;
   if (amber->get_version(get_version_response)) {
     get_version_response.dump();
   } else {

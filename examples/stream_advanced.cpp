@@ -65,8 +65,8 @@ int main(int argc, char *argv[]) {
   if (my_sensor.empty()) {
     // no sensor specified, create one
     std::string sensor_label = "fancy-sensor-6";
-    amber_models::create_sensor_response create_sensor_response;
-    if (amber->create_sensor(create_sensor_response, &sensor_label)) {
+    create_sensor_response create_sensor_response;
+    if (amber->create_sensor(create_sensor_response, sensor_label)) {
       create_sensor_response.dump();
       my_sensor = create_sensor_response.sensorId;
       sensor_created = true;
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   }
 
   // configure the sensor
-  amber_models::configure_sensor_response configure_sensor_response;
+  configure_sensor_response configure_sensor_response;
   if (amber->configure_sensor(configure_sensor_response, my_sensor, 1, 25,
                               10000, 10, 10000, 1000, 1000000, 10000)) {
     configure_sensor_response.dump();
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
       sample_count++;
       if (sample_count % batch_size == 0) {
         // stream data to a sensor
-        amber_models::stream_sensor_response stream_sensor_response;
+        stream_sensor_response stream_sensor_response;
         if (amber->stream_sensor(stream_sensor_response, my_sensor, csv_data,
                                  save_image)) {
           stream_sensor_response.dump();
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
   // send any remainder
   if (sample_count > 0) {
     // stream data to a sensor
-    amber_models::stream_sensor_response stream_sensor_response;
+    stream_sensor_response stream_sensor_response;
     if (amber->stream_sensor(stream_sensor_response, my_sensor, csv_data,
                              save_image)) {
       stream_sensor_response.dump();

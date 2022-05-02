@@ -48,35 +48,22 @@ std::string compress_string(const std::string &str);
  * path to a CA bundle to use
  *
  */
-amber_sdk::amber_sdk(const char *license_id, const char *license_file,
-                     bool verify_cert, const char *cert, const char *cainfo) {
+bool amber_sdk::amber_init(const std::string &l_id, const std::string &l_file,
+                           bool verify_cert, const std::string &cert,
+                           const std::string &cainfo) {
   this->auth_time = 0;
   this->last_code = 0;
   this->last_error[0] = '\0';
   this->expires_in = 0;
   this->auth_ok = false;
 
-  if (license_id == NULL) {
-    license_id = "";
-  }
-  if (license_file == NULL) {
-    license_file = "";
-  }
-  if (cert == NULL) {
-    cert = "";
-  }
-  if (cainfo == NULL) {
-    cainfo = "";
-  }
-
-  // first load license file
+  // store license_file and license_id.  default values for these will be filled
+  // in by constructors
   this->license_file = getenv("AMBER_LICENSE_FILE")
                            ? getenv("AMBER_LICENSE_FILE")
-                           : std::string(license_file);
-
-  // next get license ID
+                           : std::string(l_file);
   this->license_id = getenv("AMBER_LICENSE_ID") ? getenv("AMBER_LICENSE_ID")
-                                                : std::string(license_id);
+                                                : std::string(l_id);
 
   json amber_entry = {{"username", NULL},
                       {"password", NULL},
@@ -93,7 +80,7 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file,
     wordfree(&exp_result);
 
     // open up license file
-    std::ifstream file(this->license_file);
+    std::ifstream file(this->license_file.c_str());
     if (file.is_open()) {
       // load license file as json
       json license_json;
@@ -119,8 +106,8 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file,
       }
     } else {
       // if license file is something other than default, throw exception
-      if (strcmp(license_file, "~/.Amber.license") != 0) {
-        throw amber_except("license_file '%s' not found", license_file);
+      if (strcmp(license_file.c_str(), "~/.Amber.license") != 0) {
+        throw amber_except("license_file '%s' not found", license_file.c_str());
       }
     }
   }
@@ -165,6 +152,7 @@ amber_sdk::amber_sdk(const char *license_id, const char *license_file,
   if (this->license.server.compare("") == 0) {
     throw amber_except("server not specified");
   }
+  return true;
 }
 
 amber_sdk::~amber_sdk() = default;
@@ -175,13 +163,10 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb,
   return size * nmemb;
 }
 
-bool amber_sdk::create_sensor(amber_models::create_sensor_response &response,
-                              std::string *label) {
-  std::string defaultLabel = std::string();
-  if (label) {
-    defaultLabel = *label;
-  }
-  amber_models::create_sensor_request request(defaultLabel);
+bool amber_sdk::create_sensor(amber_models::PostSensorResponse &response,
+                              std::string label) {
+  amber_models::PostSensorRequest request;
+  request.label = label;
   json j = request;
   std::string body = j.dump();
   json json_response;
@@ -192,7 +177,7 @@ bool amber_sdk::create_sensor(amber_models::create_sensor_response &response,
     if (this->post_request(url, no_sensor, body, true, json_response) != 200) {
       return false;
     }
-    response = json_response.get<amber_models::create_sensor_response>();
+    response = json_response.get<amber_models::PostSensorResponse>();
     return true;
   } catch (const std::exception &e) {
     fprintf(stderr, "%s\n", e.what());
@@ -201,17 +186,19 @@ bool amber_sdk::create_sensor(amber_models::create_sensor_response &response,
 }
 
 bool amber_sdk::configure_sensor(
-    amber_models::configure_sensor_response &response,
-    const std::string &sensor_id, uint16_t feature_count,
-    uint16_t streaming_window_size, uint32_t samples_to_buffer,
-    uint64_t learning_rate_numerator, uint32_t learning_rate_denominator,
-    uint16_t learning_max_clusters, uint64_t learning_max_samples,
-    uint32_t anomaly_history_window,
-    std::vector<amber_models::config_features> features) {
-  amber_models::configure_sensor_request request{
-      feature_count,           streaming_window_size,     samples_to_buffer,
-      learning_rate_numerator, learning_rate_denominator, learning_max_clusters,
-      learning_max_samples,    anomaly_history_window,    features};
+    amber_models::PostConfigResponse &response, const std::string &sensor_id,
+    uint16_t feature_count, uint16_t streaming_window_size,
+    uint32_t samples_to_buffer, uint64_t learning_rate_numerator,
+    uint64_t learning_rate_denominator, uint16_t learning_max_clusters,
+    uint64_t learning_max_samples, uint32_t anomaly_history_window,
+    std::vector<amber_models::FeatureConfig> features) {
+
+  amber_models::PostConfigRequest request{
+      anomaly_history_window,    learning_rate_numerator,
+      learning_rate_denominator, learning_max_clusters,
+      learning_max_samples,      feature_count,
+      streaming_window_size,     features,
+      samples_to_buffer};
 
   json j = request;
   std::string body = j.dump();
@@ -222,7 +209,7 @@ bool amber_sdk::configure_sensor(
     if (this->post_request(url, sensor_id, body, true, json_response) != 200) {
       return false;
     }
-    response = json_response.get<amber_models::configure_sensor_response>();
+    response = json_response.get<amber_models::PostConfigResponse>();
   } catch (const std::exception &e) {
     fprintf(stderr, "%s\n", e.what());
     return false;
@@ -230,7 +217,28 @@ bool amber_sdk::configure_sensor(
   return true;
 }
 
-bool amber_sdk::get_sensor(amber_models::get_sensor_response &response,
+bool amber_sdk::configure_fusion(amber_models::PutConfigResponse &response,
+                                 const std::string &sensor_id,
+                                 amber_models::PutConfigRequest request) {
+
+  json j = request;
+  std::string body = j.dump();
+  json json_response;
+  std::string slug = "/config";
+  std::string url = this->license.server + slug;
+  try {
+    if (this->put_request(url, sensor_id, body, json_response) != 200) {
+      return false;
+    }
+    response = json_response.get<amber_models::PutConfigResponse>();
+  } catch (const std::exception &e) {
+    fprintf(stderr, "%s\n", e.what());
+    return false;
+  }
+  return true;
+}
+
+bool amber_sdk::get_sensor(amber_models::GetSensorResponse &response,
                            const std::string &sensor_id) {
   json json_response;
   std::string slug = "/sensor";
@@ -240,7 +248,7 @@ bool amber_sdk::get_sensor(amber_models::get_sensor_response &response,
     if (this->get_request(url, query_params, sensor_id, json_response) != 200) {
       return false;
     }
-    response = json_response.get<amber_models::get_sensor_response>();
+    response = json_response.get<amber_models::GetSensorResponse>();
   } catch (const std::exception &e) {
     fprintf(stderr, "%s\n", e.what());
     return false;
@@ -248,7 +256,7 @@ bool amber_sdk::get_sensor(amber_models::get_sensor_response &response,
   return true;
 }
 
-bool amber_sdk::list_sensors(amber_models::list_sensors_response &response) {
+bool amber_sdk::list_sensors(amber_models::GetSensorsResponse &response) {
   json json_response;
   std::string no_sensor;
   std::string slug = "/sensors";
@@ -258,7 +266,7 @@ bool amber_sdk::list_sensors(amber_models::list_sensors_response &response) {
     if (this->get_request(url, query_params, no_sensor, json_response) != 200) {
       return false;
     }
-    response = json_response.get<amber_models::list_sensors_response>();
+    response = json_response.get<amber_models::GetSensorsResponse>();
   } catch (const std::exception &e) {
     fprintf(stderr, "%s\n", e.what());
     return false;
@@ -266,9 +274,9 @@ bool amber_sdk::list_sensors(amber_models::list_sensors_response &response) {
   return true;
 }
 
-bool amber_sdk::update_sensor(amber_models::update_sensor_response &response,
+bool amber_sdk::update_sensor(amber_models::PutSensorResponse &response,
                               const std::string sensor_id, std::string &label) {
-  amber_models::update_sensor_request request{label};
+  amber_models::PutSensorResponse request{label};
   json j = request;
   std::string body = j.dump();
   json json_response;
@@ -278,7 +286,7 @@ bool amber_sdk::update_sensor(amber_models::update_sensor_response &response,
     if (this->put_request(url, sensor_id, body, json_response) != 200) {
       return false;
     }
-    response = json_response.get<amber_models::update_sensor_response>();
+    response = json_response.get<amber_models::PutSensorResponse>();
   } catch (const std::exception &e) {
     fprintf(stderr, "%s\n", e.what());
     return false;
@@ -301,10 +309,10 @@ bool amber_sdk::delete_sensor(const std::string &sensor_id) {
   return true;
 }
 
-bool amber_sdk::stream_sensor(amber_models::stream_sensor_response &response,
-                              const std::string &sensor_id,
-                              std::string &csvdata, bool save_image) {
-  amber_models::stream_sensor_request request{save_image, csvdata};
+bool amber_sdk::stream_sensor(amber_models::PostStreamResponse &response,
+                              const std::string &sensor_id, std::string csvdata,
+                              bool save_image) {
+  amber_models::PostStreamRequest request{save_image, csvdata};
   json j = request;
   std::string body = j.dump();
   json json_response;
@@ -314,7 +322,7 @@ bool amber_sdk::stream_sensor(amber_models::stream_sensor_response &response,
     if (this->post_request(url, sensor_id, body, true, json_response) != 200) {
       return false;
     }
-    response = json_response.get<amber_models::stream_sensor_response>();
+    response = json_response.get<amber_models::PostStreamResponse>();
   } catch (const std::exception &e) {
     fprintf(stderr, "%s\n", e.what());
     return false;
@@ -322,26 +330,31 @@ bool amber_sdk::stream_sensor(amber_models::stream_sensor_response &response,
   return true;
 }
 
-bool amber_sdk::enable_learning(
-    amber_models::enable_learning_response &response,
-    const std::string &sensor_id, uint32_t anomaly_history_window,
-    uint64_t learning_rate_numerator, uint32_t learning_rate_denominator,
-    uint16_t learning_max_clusters, uint64_t learning_max_samples) {
-  amber_models::enable_learning_request request{
-      learning_rate_numerator, learning_rate_denominator, learning_max_clusters,
-      learning_max_samples, anomaly_history_window};
+bool amber_sdk::enable_learning(amber_models::PutConfigResponse &response,
+                                const std::string &sensor_id,
+                                uint32_t anomaly_history_window,
+                                uint64_t learning_rate_numerator,
+                                uint64_t learning_rate_denominator,
+                                uint16_t learning_max_clusters,
+                                uint64_t learning_max_samples) {
+
+  amber_models::StreamingParameters streaming{
+      anomaly_history_window, learning_rate_numerator,
+      learning_rate_denominator, learning_max_clusters, learning_max_samples};
+  std::vector<amber_models::FusionConfig> fusion_config;
+  amber_models::PutConfigRequest request{fusion_config, streaming};
 
   json j = request;
+  j.erase("features");
   std::string body = j.dump();
   json json_response;
   std::string slug = "/config";
   std::string url = this->license.server + slug;
-  int code;
   try {
     if (this->put_request(url, sensor_id, body, json_response) != 200) {
       return false;
     }
-    response = json_response.get<amber_models::enable_learning_response>();
+    response = json_response.get<amber_models::PutConfigResponse>();
   } catch (const std::exception &e) {
     fprintf(stderr, "%s\n", e.what());
     return false;
@@ -349,11 +362,11 @@ bool amber_sdk::enable_learning(
   return true;
 }
 
-bool amber_sdk::pretrain_sensor(
-    amber_models::pretrain_sensor_response &response,
-    const std::string &sensor_id, std::string &csvdata, bool autotuneConfig,
-    bool block) {
-  amber_models::pretrain_sensor_request request{csvdata, autotuneConfig};
+bool amber_sdk::pretrain_sensor(amber_models::PostPretrainResponse &response,
+                                const std::string &sensor_id,
+                                std::string csvdata, bool autotuneConfig,
+                                bool block) {
+  amber_models::PostPretrainRequest request{csvdata, autotuneConfig};
   json j = request;
   std::string body = j.dump();
   json json_response;
@@ -366,11 +379,11 @@ bool amber_sdk::pretrain_sensor(
       return false;
     }
     if (!block || response_code == 200) {
-      response = json_response.get<amber_models::pretrain_sensor_response>();
+      response = json_response.get<amber_models::PostPretrainResponse>();
       return true;
     }
 
-    amber_models::get_pretrain_response get_response;
+    amber_models::GetPretrainResponse get_response;
     while (true) {
       this->get_pretrain(get_response, sensor_id);
       // get_response =
@@ -391,7 +404,7 @@ bool amber_sdk::pretrain_sensor(
   return true;
 }
 
-bool amber_sdk::get_pretrain(amber_models::get_pretrain_response &response,
+bool amber_sdk::get_pretrain(amber_models::GetPretrainResponse &response,
                              const std::string &sensor_id) {
   json json_response;
   std::string slug = "/pretrain";
@@ -403,7 +416,7 @@ bool amber_sdk::get_pretrain(amber_models::get_pretrain_response &response,
     if (response_code != 200 && response_code != 202) {
       return false;
     }
-    response = json_response.get<amber_models::get_pretrain_response>();
+    response = json_response.get<amber_models::GetPretrainResponse>();
   } catch (const std::exception &e) {
     fprintf(stderr, "%s\n", e.what());
     return false;
@@ -411,7 +424,7 @@ bool amber_sdk::get_pretrain(amber_models::get_pretrain_response &response,
   return true;
 }
 
-bool amber_sdk::get_config(amber_models::get_config_response &response,
+bool amber_sdk::get_config(amber_models::GetConfigResponse &response,
                            const std::string &sensor_id) {
   json json_response;
   std::string slug = "/config";
@@ -421,7 +434,7 @@ bool amber_sdk::get_config(amber_models::get_config_response &response,
     if (this->get_request(url, query_params, sensor_id, json_response) != 200) {
       return false;
     }
-    response = json_response.get<amber_models::get_config_response>();
+    response = json_response.get<amber_models::GetConfigResponse>();
   } catch (const std::exception &e) {
     fprintf(stderr, "%s\n", e.what());
     return false;
@@ -429,7 +442,7 @@ bool amber_sdk::get_config(amber_models::get_config_response &response,
   return true;
 }
 
-bool amber_sdk::get_version(amber_models::get_version_response &response) {
+bool amber_sdk::get_version(amber_models::Version &response) {
   json json_response;
   std::string no_sensor;
   std::string slug = "/version";
@@ -439,7 +452,7 @@ bool amber_sdk::get_version(amber_models::get_version_response &response) {
     if (this->get_request(url, query_params, no_sensor, json_response) != 200) {
       return false;
     }
-    response = json_response.get<amber_models::get_version_response>();
+    response = json_response.get<amber_models::Version>();
   } catch (const std::exception &e) {
     fprintf(stderr, "%s\n", e.what());
     return false;
@@ -447,7 +460,7 @@ bool amber_sdk::get_version(amber_models::get_version_response &response) {
   return true;
 }
 
-bool amber_sdk::get_status(amber_models::get_status_response &response,
+bool amber_sdk::get_status(amber_models::GetStatusResponse &response,
                            const std::string &sensor_id) {
   json json_response;
   std::string slug = "/status";
@@ -457,7 +470,7 @@ bool amber_sdk::get_status(amber_models::get_status_response &response,
     if (this->get_request(url, query_params, sensor_id, json_response) != 200) {
       return false;
     }
-    response = json_response.get<amber_models::get_status_response>();
+    response = json_response.get<amber_models::GetStatusResponse>();
   } catch (const std::exception &e) {
     fprintf(stderr, "%s\n", e.what());
     return false;
@@ -466,8 +479,8 @@ bool amber_sdk::get_status(amber_models::get_status_response &response,
 }
 
 bool amber_sdk::get_root_cause_by_idlist(
-    amber_models::get_root_cause_response &response,
-    const std::string &sensor_id, std::string &idlist) {
+    amber_models::GetRootCauseResponse &response, const std::string &sensor_id,
+    std::string idlist) {
   json json_response;
   std::string slug = "/rootCause";
   std::string url = this->license.server + slug;
@@ -481,7 +494,7 @@ bool amber_sdk::get_root_cause_by_idlist(
     if (this->get_request(url, query_params, sensor_id, json_response) != 200) {
       return false;
     }
-    response = json_response.get<amber_models::get_root_cause_response>();
+    response = json_response.get<amber_models::GetRootCauseResponse>();
   } catch (const std::exception &e) {
     fprintf(stderr, "%s\n", e.what());
     return false;
@@ -490,8 +503,8 @@ bool amber_sdk::get_root_cause_by_idlist(
 }
 
 bool amber_sdk::get_root_cause_by_patternlist(
-    amber_models::get_root_cause_response &response,
-    const std::string &sensor_id, std::string &patternlist) {
+    amber_models::GetRootCauseResponse &response, const std::string &sensor_id,
+    std::string patternlist) {
   json json_response;
   std::string slug = "/rootCause";
   std::string url = this->license.server + slug;
@@ -504,7 +517,7 @@ bool amber_sdk::get_root_cause_by_patternlist(
     if (this->get_request(url, query_params, sensor_id, json_response) != 200) {
       return false;
     }
-    response = json_response.get<amber_models::get_root_cause_response>();
+    response = json_response.get<amber_models::GetRootCauseResponse>();
   } catch (const std::exception &e) {
     fprintf(stderr, "%s\n", e.what());
     return false;
@@ -734,9 +747,9 @@ bool amber_sdk::authenticate(json &response) {
   this->auth_ok = false;
 
   // create request body
-  amber_models::auth_request request{this->license.username,
-                                     this->license.password};
-  json j = request;
+  auto request = amber_models::PostAuth2Request{this->license.username,
+                                                this->license.password};
+  nlohmann::json j = request;
   std::string body = j.dump();
 
   // post request
@@ -752,7 +765,7 @@ bool amber_sdk::authenticate(json &response) {
     this->auth_ok = true;
 
     // process response
-    this->auth = response.get<amber_models::auth_response>();
+    this->auth = response.get<amber_models::PostAuth2Response>();
     this->expires_in = std::stoul(this->auth.expiresIn, nullptr, 0);
     this->auth_time = std::time(nullptr) + this->expires_in;
     this->auth_bear_header =

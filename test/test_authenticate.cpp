@@ -14,7 +14,7 @@ namespace {
 TEST(authenticate, Successful) {
   try {
     auto *amber = create_amber_client();
-    amber_models::list_sensors_response response;
+    list_sensors_response response;
     EXPECT_TRUE(amber->list_sensors(response));
     delete amber;
   } catch (amber_except &e) {
@@ -26,7 +26,7 @@ TEST(authenticate, Negative) {
   try {
     auto *amber = create_amber_client();
     amber->license.password = "bad-password";
-    amber_models::list_sensors_response response;
+    list_sensors_response response;
     EXPECT_FALSE(amber->list_sensors(response));
     delete amber;
   } catch (amber_except &e) {
