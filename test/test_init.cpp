@@ -33,7 +33,7 @@ TEST(amber_sdk, Constructors) {
   try {
     setenv("AMBER_LICENSE_FILE", "test/test.Amber.license", 1);
     setenv("AMBER_LICENSE_ID", "default", 1);
-    amber = new amber_sdk();
+    amber = new amber_sdk("", "");
     ASSERT_EQ(amber->license.username, "admin");
     ASSERT_EQ(amber->license.password, "admin");
     ASSERT_EQ(amber->license.server, "http://localhost:5007/v1");
@@ -52,7 +52,7 @@ TEST(amber_sdk, Constructors) {
     setenv("AMBER_SERVER", "https://temp.amber.boonlogic.com/v1", 1);
     setenv("AMBER_SSL_CERT", "bogus_ssl_cert", 1);
     setenv("AMBER_SSL_VERIFY", "false", 1);
-    amber = new amber_sdk();
+    amber = new amber_sdk("", "");
     EXPECT_EQ(amber->license.username, "xyyyAmberUser");
     EXPECT_EQ(amber->license.password, "bogus_password");
     EXPECT_EQ(amber->license.server, "https://temp.amber.boonlogic.com/v1");

@@ -87,6 +87,11 @@ add_custom_target(
         COMMAND git diff --exit-code
 )
 
+add_custom_target(
+        generate
+        COMMAND python3 generate.py > include/amber_gen.h
+)
+
 include(GoogleTest)
 gtest_discover_tests(test_client)
 ###########

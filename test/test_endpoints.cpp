@@ -28,14 +28,14 @@ amber_sdk *endpoints::amber = nullptr;
 std::string endpoints::sensor_id = "";
 
 TEST_F(endpoints, CreateSensor) {
-  amber_models::create_sensor_response response;
+  create_sensor_response response;
   std::string sensor_label = "test-sensor-cpp";
-  ASSERT_TRUE(amber->create_sensor(response, &sensor_label));
+  ASSERT_TRUE(amber->create_sensor(response, sensor_label));
   endpoints::set_sid(response.sensorId);
 }
 
 TEST_F(endpoints, UpdateLabel) {
-  amber_models::update_sensor_response update_sensor_response;
+  update_sensor_response update_sensor_response;
   std::string label = "test-sensor-cpp";
   ASSERT_TRUE(amber->update_sensor(update_sensor_response, endpoints::get_sid(),
                                    label));
@@ -49,7 +49,7 @@ TEST_F(endpoints, UpdateLabel) {
 }
 
 TEST_F(endpoints, UpdateLabelNegative) {
-  amber_models::update_sensor_response update_sensor_response;
+  update_sensor_response update_sensor_response;
   std::string label = "new-label";
   std::string bad_sensor_id = "bogus-sensor-id";
   ASSERT_FALSE(
@@ -57,21 +57,21 @@ TEST_F(endpoints, UpdateLabelNegative) {
 }
 
 TEST_F(endpoints, GetSensor) {
-  amber_models::get_sensor_response response;
+  get_sensor_response response;
   ASSERT_TRUE(amber->get_sensor(response, sensor_id));
   EXPECT_EQ(response.label, "test-sensor-cpp-sdk");
   EXPECT_EQ(response.sensorId, endpoints::get_sid());
 }
 
 TEST_F(endpoints, GetSensorNegative) {
-  amber_models::get_sensor_response response;
+  get_sensor_response response;
   std::string bad_sensor_id = "bogus-sensor-id";
   ASSERT_FALSE(amber->get_sensor(response, bad_sensor_id));
 }
 
 TEST_F(endpoints, GetVersion) {
   try {
-    amber_models::get_version_response get_version_response;
+    version_response get_version_response;
     amber->get_version(get_version_response);
     EXPECT_NE(std::string(get_version_response.builder), "");
   } catch (amber_except &e) {
@@ -80,11 +80,11 @@ TEST_F(endpoints, GetVersion) {
 }
 
 TEST_F(endpoints, ListSensors) {
-  amber_models::list_sensors_response response;
+  list_sensors_response response;
   ASSERT_TRUE(amber->list_sensors(response));
   bool found = false;
-  for (int i = 0; i < response.sensors.size(); i++) {
-    if (std::string(response.sensors[i].sensorId).compare(sensor_id)) {
+  for (int i = 0; i < response.value.size(); i++) {
+    if (std::string(response.value[i].sensorId).compare(sensor_id)) {
       found = true;
     }
   }
@@ -94,7 +94,7 @@ TEST_F(endpoints, ListSensors) {
 }
 
 TEST_F(endpoints, ConfigureSensor) {
-  amber_models::configure_sensor_response expected;
+  configure_sensor_response expected;
   expected.anomalyHistoryWindow = 1000;
   expected.featureCount = 1;
   expected.streamingWindowSize = 25;
@@ -104,7 +104,7 @@ TEST_F(endpoints, ConfigureSensor) {
   expected.learningMaxClusters = 1000;
   expected.learningMaxSamples = 1000000;
 
-  amber_models::configure_sensor_response response;
+  configure_sensor_response response;
   ASSERT_TRUE(amber->configure_sensor(response, endpoints::get_sid(), 1, 25,
                                       1000, 10, 10000, 1000, 1000000, 1000));
 
@@ -119,7 +119,7 @@ TEST_F(endpoints, ConfigureSensor) {
 }
 
 TEST_F(endpoints, ConfigureSensorNegative) {
-  amber_models::configure_sensor_response response;
+  configure_sensor_response response;
   std::string badSensor = "bogus-sensor";
   ASSERT_FALSE(amber->configure_sensor(response, badSensor, 1, 25, 1000, 10,
                                        10000, 1000, 1000000, 1000));
@@ -157,7 +157,7 @@ TEST_F(endpoints, ConfigureSensorNegative) {
 }
 
 TEST_F(endpoints, GetConfig) {
-  amber_models::get_config_response expected;
+  get_config_response expected;
   expected.anomalyHistoryWindow = 1000;
   expected.featureCount = 1;
   expected.streamingWindowSize = 25;
@@ -168,7 +168,7 @@ TEST_F(endpoints, GetConfig) {
   expected.learningMaxSamples = 1000000;
   expected.percentVariation = 0.05;
 
-  amber_models::get_config_response response;
+  get_config_response response;
   ASSERT_TRUE(amber->get_config(response, endpoints::get_sid()));
 
   EXPECT_EQ(expected.anomalyHistoryWindow, response.anomalyHistoryWindow);
@@ -183,25 +183,25 @@ TEST_F(endpoints, GetConfig) {
 }
 
 TEST_F(endpoints, GetConfigNegative) {
-  amber_models::get_config_response response;
+  get_config_response response;
   std::string bad_sensor_id = "bogus-sensor-id";
   ASSERT_FALSE(amber->get_config(response, bad_sensor_id));
 }
 
 TEST_F(endpoints, GetPretrainNoneState) {
-  amber_models::get_pretrain_response response;
+  get_pretrain_response response;
   ASSERT_TRUE(amber->get_pretrain(response, endpoints::get_sid()));
   EXPECT_EQ(response.state, "None");
 }
 
 TEST_F(endpoints, GetPretrainNegative) {
-  amber_models::get_pretrain_response response;
+  get_pretrain_response response;
   std::string bad_sensor_id = "bogus-sensor-id";
   ASSERT_FALSE(amber->get_pretrain(response, bad_sensor_id));
 }
 
 TEST_F(endpoints, PretrainSensor) {
-  amber_models::pretrain_sensor_response response;
+  pretrain_sensor_response response;
   // Read in pretrain data //
   std::string traindata, line;
   std::ifstream myFile("./examples/pretrain-data.csv");
@@ -220,7 +220,7 @@ TEST_F(endpoints, PretrainSensor) {
   EXPECT_TRUE(response.state == "Pretraining" ||
               response.state == "Pretrained");
 
-  amber_models::get_pretrain_response get_response;
+  get_pretrain_response get_response;
   while (true) {
     amber->get_pretrain(get_response, sensor_id);
     if (get_response.state == "Pretrained") {
@@ -233,7 +233,7 @@ TEST_F(endpoints, PretrainSensor) {
 }
 
 TEST_F(endpoints, PretrainSensorNegative) {
-  amber_models::pretrain_sensor_response response;
+  pretrain_sensor_response response;
   std::string bad_sensor_id = "bogus-sensor-id";
   std::string csvdata = "1,2,3,4,5";
   ASSERT_FALSE(amber->pretrain_sensor(response, bad_sensor_id, csvdata));
@@ -243,20 +243,20 @@ TEST_F(endpoints, PretrainSensorNegative) {
 }
 
 TEST_F(endpoints, GetStatus) {
-  amber_models::get_status_response response;
+  get_status_response response;
   ASSERT_TRUE(amber->get_status(response, endpoints::get_sid()));
-  EXPECT_TRUE(response.pca.size() != 0);
+  EXPECT_TRUE(response.pca.value.size() != 0);
   EXPECT_EQ(response.numClusters, 581);
 }
 
 TEST_F(endpoints, GetStatusNegative) {
-  amber_models::get_status_response response;
+  get_status_response response;
   std::string bad_sensor_id = "bogus-sensor-id";
   ASSERT_FALSE(amber->get_status(response, bad_sensor_id));
 }
 
 TEST_F(endpoints, StreamSensor) {
-  amber_models::stream_sensor_response response;
+  stream_sensor_response response;
   std::string csvdata = "1,2,3";
   ASSERT_TRUE(amber->stream_sensor(response, endpoints::get_sid(), csvdata));
   EXPECT_EQ(response.state, "Monitoring");
@@ -277,7 +277,7 @@ TEST_F(endpoints, StreamSensor) {
 }
 
 TEST_F(endpoints, StreamSensorNegative) {
-  amber_models::stream_sensor_response response;
+  stream_sensor_response response;
   std::string bad_sensor_id = "bogus-sensor-id";
   std::string csvdata = "1";
   ASSERT_FALSE(amber->stream_sensor(response, bad_sensor_id, csvdata));
@@ -287,7 +287,7 @@ TEST_F(endpoints, StreamSensorNegative) {
 }
 
 TEST_F(endpoints, GetRootCause) {
-  amber_models::get_root_cause_response response;
+  get_root_cause_response response;
   std::string patternlist =
       "[[1,1,1,1,2,3,1,1,1,1,2,3,1,1,1,1,2,3,1,1,1,1,2,3,1]]";
   ASSERT_TRUE(amber->get_root_cause_by_patternlist(
@@ -295,7 +295,7 @@ TEST_F(endpoints, GetRootCause) {
 }
 
 TEST_F(endpoints, GetRootCauseNegative) {
-  amber_models::get_root_cause_response response;
+  get_root_cause_response response;
   std::string bad_sensor_id = "bogus-sensor-id";
   std::string idlist = "[1]";
   ASSERT_FALSE(
@@ -313,14 +313,14 @@ TEST_F(endpoints, GetRootCauseNegative) {
 }
 
 TEST_F(endpoints, EnableLearning) {
-  amber_models::enable_learning_response expected;
+  enable_learning_response expected;
   expected.streaming.anomalyHistoryWindow = 1000;
   expected.streaming.learningRateNumerator = 10;
   expected.streaming.learningRateDenominator = 10000;
   expected.streaming.learningMaxClusters = 1000;
   expected.streaming.learningMaxSamples = 1000000;
 
-  amber_models::enable_learning_response response;
+  enable_learning_response response;
   ASSERT_TRUE(amber->enable_learning(response, endpoints::get_sid(), 1000, 10,
                                      10000, 1000, 1000000));
 
@@ -337,13 +337,13 @@ TEST_F(endpoints, EnableLearning) {
 }
 
 TEST_F(endpoints, EnableLearningNegative) {
-  amber_models::enable_learning_response response;
+  enable_learning_response response;
   std::string badSensor = "bogus-sensor";
   ASSERT_FALSE(amber->enable_learning(response, badSensor, 1000, 10, 10000,
                                       1000, 1000000));
 
   // sensor is not in learning or monitoring
-  amber_models::configure_sensor_response config_response;
+  configure_sensor_response config_response;
   ASSERT_TRUE(amber->configure_sensor(config_response, endpoints::get_sid(), 1,
                                       25, 1000, 10, 10000, 1000, 1000000,
                                       1000));

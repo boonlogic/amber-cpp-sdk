@@ -13,9 +13,9 @@ make
 ### running examples scripts
 All project binaries (examples and test) can be found the bin directory
 
-```
-bin/connect-example 
+`bin/connect-example`
 
+```
 {
     "api-version": "/v1",
     "builder": "712de01c",
@@ -30,8 +30,8 @@ bin/connect-example
 ### running the test_client
 
 test_client is built and installed in the projects bin directory.  test_client requires
-the environment variable `AMBER_TEST_PROFILE` to be set in order to select the correct
-test platform.
+the environment variables `AMBER_TEST_LICENSE_FILE` and `AMBER_TEST_LICENSE_ID` are used to select
+the amber server installation to run the tests against.
 
 The aws cli must be installed on the local test machine and the configured user must have an access
 role for AWS secretsmanager.  See an administrator if you needs this.
@@ -56,4 +56,5 @@ runtest [v1,v1next,aop,aoc,dev,qa]
 TBD
 
 ### model generation
-amber-cpp-sdk does not use automatic code generation when schema changes are made.  
+amber-ccp-sdk uses a home-spun code generator to create nlohmann-based models given an amber spec file
+named *swagger.json*.  The `make generate` target can be used to create recreate the model definitions.
