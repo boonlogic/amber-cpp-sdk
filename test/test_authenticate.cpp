@@ -15,7 +15,7 @@ TEST(authenticate, Successful) {
   try {
     auto *amber = create_amber_client();
     list_sensors_response response;
-    EXPECT_TRUE(amber->list_sensors(response));
+    EXPECT_EQ(amber->list_sensors(response), nullptr);
     delete amber;
   } catch (amber_except &e) {
     ASSERT_TRUE(false) << e.what();
@@ -27,7 +27,7 @@ TEST(authenticate, Negative) {
     auto *amber = create_amber_client();
     amber->license.password = "bad-password";
     list_sensors_response response;
-    EXPECT_FALSE(amber->list_sensors(response));
+    EXPECT_NE(amber->list_sensors(response), nullptr);
     delete amber;
   } catch (amber_except &e) {
     ASSERT_TRUE(false) << e.what();
