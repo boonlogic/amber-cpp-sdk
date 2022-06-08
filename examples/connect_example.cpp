@@ -4,8 +4,8 @@
 int main(int argc, char *argv[]) {
 
   bool verify = true;
-  char *cert = NULL;
-  char *cainfo = NULL;
+  char *cert = nullptr;
+  char *cainfo = nullptr;
 
   for (int arg = 1; arg < argc; arg++) {
     std::string str(argv[arg]);
@@ -40,13 +40,13 @@ int main(int argc, char *argv[]) {
   amber_sdk *amber;
   try {
     amber = new amber_sdk();
-    if (verify == false) {
+    if (!verify) {
       amber->verify_certificate(verify);
     }
-    if (cainfo != NULL) {
+    if (cainfo != nullptr) {
       amber->set_cainfo(cainfo);
     }
-    if (cert != NULL) {
+    if (cert != nullptr) {
       amber->set_cert(cert);
     }
   } catch (amber_except &e) {
@@ -55,10 +55,11 @@ int main(int argc, char *argv[]) {
   }
 
   // get the version
-  version_response get_version_response;
-  if (amber->get_version(get_version_response)) {
-    get_version_response.dump();
+  get_version_response version_response;
+  auto err = amber->get_version(version_response);
+  if (!err) {
+    version_response.dump();
   } else {
-    std::cout << "error: " << amber->last_error << "\n";
+    err->dump();
   }
 }

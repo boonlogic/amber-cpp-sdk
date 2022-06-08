@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 #include <iostream>
 #include <sstream>
+#include <utility>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -19,32 +20,33 @@ protected:
 
   static void TearDownTestSuite() { delete amber; }
 
-  static void set_sid(std::string sid) { sensor_id = sid; }
+  static void set_sid(std::string sid) { sensor_id = std::move(sid); }
 
   static std::string get_sid() { return sensor_id; }
 };
 
 amber_sdk *endpoints::amber = nullptr;
-std::string endpoints::sensor_id = "";
+std::string endpoints::sensor_id;
 
 TEST_F(endpoints, CreateSensor) {
   create_sensor_response response;
   std::string sensor_label = "test-sensor-cpp";
-  ASSERT_TRUE(amber->create_sensor(response, sensor_label));
+  ASSERT_EQ(amber->create_sensor(response, sensor_label), nullptr);
   endpoints::set_sid(response.sensorId);
 }
 
 TEST_F(endpoints, UpdateLabel) {
   update_sensor_response update_sensor_response;
   std::string label = "test-sensor-cpp";
-  ASSERT_TRUE(amber->update_sensor(update_sensor_response, endpoints::get_sid(),
-                                   label));
+  ASSERT_EQ(
+      amber->update_sensor(update_sensor_response, endpoints::get_sid(), label),
+      nullptr);
   EXPECT_EQ(update_sensor_response.label, "test-sensor-cpp");
 
   // set a label that identifies the sensor as being created by this test
   std::string sdk_label = "test-sensor-cpp-sdk";
-  ASSERT_TRUE(
-      amber->update_sensor(update_sensor_response, sensor_id, sdk_label));
+  ASSERT_EQ(amber->update_sensor(update_sensor_response, sensor_id, sdk_label),
+            nullptr);
   EXPECT_EQ(update_sensor_response.label, "test-sensor-cpp-sdk");
 }
 
@@ -52,13 +54,13 @@ TEST_F(endpoints, UpdateLabelNegative) {
   update_sensor_response update_sensor_response;
   std::string label = "new-label";
   std::string bad_sensor_id = "bogus-sensor-id";
-  ASSERT_FALSE(
-      amber->update_sensor(update_sensor_response, bad_sensor_id, label));
+  ASSERT_NE(amber->update_sensor(update_sensor_response, bad_sensor_id, label),
+            nullptr);
 }
 
 TEST_F(endpoints, GetSensor) {
   get_sensor_response response;
-  ASSERT_TRUE(amber->get_sensor(response, sensor_id));
+  ASSERT_EQ(amber->get_sensor(response, sensor_id), nullptr);
   EXPECT_EQ(response.label, "test-sensor-cpp-sdk");
   EXPECT_EQ(response.sensorId, endpoints::get_sid());
 }
@@ -66,25 +68,24 @@ TEST_F(endpoints, GetSensor) {
 TEST_F(endpoints, GetSensorNegative) {
   get_sensor_response response;
   std::string bad_sensor_id = "bogus-sensor-id";
-  ASSERT_FALSE(amber->get_sensor(response, bad_sensor_id));
+  ASSERT_NE(amber->get_sensor(response, bad_sensor_id), nullptr);
 }
 
 TEST_F(endpoints, GetVersion) {
-  try {
-    version_response get_version_response;
-    amber->get_version(get_version_response);
-    EXPECT_NE(std::string(get_version_response.builder), "");
-  } catch (amber_except &e) {
-    ASSERT_TRUE(false) << e.what();
-  }
+  get_version_response get_version_response;
+  auto err = amber->get_version(get_version_response);
+  EXPECT_EQ(err, nullptr);
+  EXPECT_NE(std::string(get_version_response.builder), "");
+  EXPECT_NE(std::string(get_version_response.expert_common), "");
+  EXPECT_NE(std::string(get_version_response.expert_api), "");
 }
 
 TEST_F(endpoints, ListSensors) {
   list_sensors_response response;
-  ASSERT_TRUE(amber->list_sensors(response));
+  ASSERT_EQ(amber->list_sensors(response), nullptr);
   bool found = false;
-  for (int i = 0; i < response.value.size(); i++) {
-    if (std::string(response.value[i].sensorId).compare(sensor_id)) {
+  for (auto &i : response.value) {
+    if (std::string(i.sensorId) == sensor_id) {
       found = true;
     }
   }
@@ -105,8 +106,9 @@ TEST_F(endpoints, ConfigureSensor) {
   expected.learningMaxSamples = 1000000;
 
   configure_sensor_response response;
-  ASSERT_TRUE(amber->configure_sensor(response, endpoints::get_sid(), 1, 25,
-                                      1000, 10, 10000, 1000, 1000000, 1000));
+  ASSERT_EQ(amber->configure_sensor(response, endpoints::get_sid(), 1, 25, 1000,
+                                    10, 10000, 1000, 1000000, 1000),
+            nullptr);
 
   EXPECT_EQ(expected.anomalyHistoryWindow, response.anomalyHistoryWindow);
   EXPECT_EQ(expected.featureCount, response.featureCount);
@@ -121,15 +123,18 @@ TEST_F(endpoints, ConfigureSensor) {
 TEST_F(endpoints, ConfigureSensorNegative) {
   configure_sensor_response response;
   std::string badSensor = "bogus-sensor";
-  ASSERT_FALSE(amber->configure_sensor(response, badSensor, 1, 25, 1000, 10,
-                                       10000, 1000, 1000000, 1000));
+  ASSERT_NE(amber->configure_sensor(response, badSensor, 1, 25, 1000, 10, 10000,
+                                    1000, 1000000, 1000),
+            nullptr);
 
   // invalid feature_count
-  ASSERT_FALSE(amber->configure_sensor(response, sensor_id, -1, 25, 1000, 10,
-                                       10000, 1000, 1000000, 1000));
+  ASSERT_NE(amber->configure_sensor(response, sensor_id, -1, 25, 1000, 10,
+                                    10000, 1000, 1000000, 1000),
+            nullptr);
   // invalid streaming window size
-  ASSERT_FALSE(amber->configure_sensor(response, sensor_id, 1, -1, 1000, 10,
-                                       10000, 1000, 1000000, 1000));
+  ASSERT_NE(amber->configure_sensor(response, sensor_id, 1, -1, 1000, 10, 10000,
+                                    1000, 1000000, 1000),
+            nullptr);
 
 #if 0
         // TODO the following tests need changes with the server to put maximums on some
@@ -169,7 +174,7 @@ TEST_F(endpoints, GetConfig) {
   expected.percentVariation = 0.05;
 
   get_config_response response;
-  ASSERT_TRUE(amber->get_config(response, endpoints::get_sid()));
+  ASSERT_EQ(amber->get_config(response, endpoints::get_sid()), nullptr);
 
   EXPECT_EQ(expected.anomalyHistoryWindow, response.anomalyHistoryWindow);
   EXPECT_EQ(expected.featureCount, response.featureCount);
@@ -185,44 +190,44 @@ TEST_F(endpoints, GetConfig) {
 TEST_F(endpoints, GetConfigNegative) {
   get_config_response response;
   std::string bad_sensor_id = "bogus-sensor-id";
-  ASSERT_FALSE(amber->get_config(response, bad_sensor_id));
+  ASSERT_NE(amber->get_config(response, bad_sensor_id), nullptr);
 }
 
 TEST_F(endpoints, GetPretrainNoneState) {
   get_pretrain_response response;
-  ASSERT_TRUE(amber->get_pretrain(response, endpoints::get_sid()));
+  ASSERT_EQ(amber->get_pretrain(response, endpoints::get_sid()), nullptr);
   EXPECT_EQ(response.state, "None");
 }
 
 TEST_F(endpoints, GetPretrainNegative) {
   get_pretrain_response response;
   std::string bad_sensor_id = "bogus-sensor-id";
-  ASSERT_FALSE(amber->get_pretrain(response, bad_sensor_id));
+  EXPECT_NE(amber->get_pretrain(response, bad_sensor_id), nullptr);
 }
 
 TEST_F(endpoints, PretrainSensor) {
   pretrain_sensor_response response;
   // Read in pretrain data //
   std::string traindata, line;
-  std::ifstream myFile("./examples/pretrain-data.csv");
+  std::ifstream myFile("./data/pretrain-data.csv");
   float val;
   while (std::getline(myFile, line)) {
     std::stringstream ss(line);
     while (ss >> val) {
-      traindata = traindata + std::to_string(val) + ",";
+      traindata += std::to_string(val) + ",";
       if (ss.peek() == ',')
         ss.ignore();
     }
   }
   traindata.pop_back();
   myFile.close();
-  ASSERT_TRUE(amber->pretrain_sensor(response, sensor_id, traindata));
+  ASSERT_EQ(amber->pretrain_sensor(response, sensor_id, traindata), nullptr);
   EXPECT_TRUE(response.state == "Pretraining" ||
               response.state == "Pretrained");
 
   get_pretrain_response get_response;
   while (true) {
-    amber->get_pretrain(get_response, sensor_id);
+    ASSERT_EQ(amber->get_pretrain(get_response, sensor_id), nullptr);
     if (get_response.state == "Pretrained") {
       break;
     } else {
@@ -236,29 +241,31 @@ TEST_F(endpoints, PretrainSensorNegative) {
   pretrain_sensor_response response;
   std::string bad_sensor_id = "bogus-sensor-id";
   std::string csvdata = "1,2,3,4,5";
-  ASSERT_FALSE(amber->pretrain_sensor(response, bad_sensor_id, csvdata));
+  ASSERT_NE(amber->pretrain_sensor(response, bad_sensor_id, csvdata), nullptr);
 
   // not enough data to fill the buffer
-  ASSERT_FALSE(amber->pretrain_sensor(response, sensor_id, csvdata, false));
+  ASSERT_NE(amber->pretrain_sensor(response, sensor_id, csvdata, false),
+            nullptr);
 }
 
 TEST_F(endpoints, GetStatus) {
   get_status_response response;
-  ASSERT_TRUE(amber->get_status(response, endpoints::get_sid()));
-  EXPECT_TRUE(response.pca.value.size() != 0);
+  ASSERT_EQ(amber->get_status(response, endpoints::get_sid()), nullptr);
+  EXPECT_TRUE(!response.pca.value.empty());
   EXPECT_EQ(response.numClusters, 581);
 }
 
 TEST_F(endpoints, GetStatusNegative) {
   get_status_response response;
   std::string bad_sensor_id = "bogus-sensor-id";
-  ASSERT_FALSE(amber->get_status(response, bad_sensor_id));
+  ASSERT_NE(amber->get_status(response, bad_sensor_id), nullptr);
 }
 
 TEST_F(endpoints, StreamSensor) {
   stream_sensor_response response;
   std::string csvdata = "1,2,3";
-  ASSERT_TRUE(amber->stream_sensor(response, endpoints::get_sid(), csvdata));
+  ASSERT_EQ(amber->stream_sensor(response, endpoints::get_sid(), csvdata),
+            nullptr);
   EXPECT_EQ(response.state, "Monitoring");
   EXPECT_EQ(response.message, "");
   EXPECT_EQ(response.progress, 0);
@@ -280,36 +287,29 @@ TEST_F(endpoints, StreamSensorNegative) {
   stream_sensor_response response;
   std::string bad_sensor_id = "bogus-sensor-id";
   std::string csvdata = "1";
-  ASSERT_FALSE(amber->stream_sensor(response, bad_sensor_id, csvdata));
+  EXPECT_NE(amber->stream_sensor(response, bad_sensor_id, csvdata), nullptr);
 
   csvdata = "1,2,&,4";
-  ASSERT_FALSE(amber->stream_sensor(response, endpoints::get_sid(), csvdata));
+  EXPECT_NE(amber->stream_sensor(response, endpoints::get_sid(), csvdata),
+            nullptr);
 }
 
 TEST_F(endpoints, GetRootCause) {
   get_root_cause_response response;
-  std::string patternlist =
-      "[[1,1,1,1,2,3,1,1,1,1,2,3,1,1,1,1,2,3,1,1,1,1,2,3,1]]";
-  ASSERT_TRUE(amber->get_root_cause_by_patternlist(
-      response, endpoints::get_sid(), patternlist));
+  std::vector<std::vector<uint16_t>> patternlist = {{1, 1, 1, 1, 2, 3, 1, 1, 1,
+                                                     1, 2, 3, 1, 1, 1, 1, 2, 3,
+                                                     1, 1, 1, 1, 2, 3, 1}};
+  ASSERT_EQ(amber->get_root_cause_by_patternlist(response, endpoints::get_sid(),
+                                                 patternlist),
+            nullptr);
 }
 
 TEST_F(endpoints, GetRootCauseNegative) {
   get_root_cause_response response;
   std::string bad_sensor_id = "bogus-sensor-id";
-  std::string idlist = "[1]";
-  ASSERT_FALSE(
-      amber->get_root_cause_by_idlist(response, bad_sensor_id, idlist));
-
-  // invalid format
-  idlist = "1";
-  EXPECT_THROW(amber->get_root_cause_by_idlist(response, sensor_id, idlist),
-               amber_except);
-
-  std::string patternlist = "1,2,3";
-  EXPECT_THROW(
-      amber->get_root_cause_by_idlist(response, sensor_id, patternlist),
-      amber_except);
+  std::vector<uint16_t> idlist{1};
+  ASSERT_NE(amber->get_root_cause_by_idlist(response, bad_sensor_id, idlist),
+            nullptr);
 }
 
 TEST_F(endpoints, EnableLearning) {
@@ -321,8 +321,9 @@ TEST_F(endpoints, EnableLearning) {
   expected.streaming.learningMaxSamples = 1000000;
 
   enable_learning_response response;
-  ASSERT_TRUE(amber->enable_learning(response, endpoints::get_sid(), 1000, 10,
-                                     10000, 1000, 1000000));
+  ASSERT_EQ(amber->enable_learning(response, endpoints::get_sid(), 1000, 10,
+                                   10000, 1000, 1000000),
+            nullptr);
 
   EXPECT_EQ(expected.streaming.anomalyHistoryWindow,
             response.streaming.anomalyHistoryWindow);
@@ -339,24 +340,31 @@ TEST_F(endpoints, EnableLearning) {
 TEST_F(endpoints, EnableLearningNegative) {
   enable_learning_response response;
   std::string badSensor = "bogus-sensor";
-  ASSERT_FALSE(amber->enable_learning(response, badSensor, 1000, 10, 10000,
-                                      1000, 1000000));
+  ASSERT_NE(amber->enable_learning(response, badSensor, 1000, 10, 10000, 1000,
+                                   1000000),
+            nullptr);
 
   // sensor is not in learning or monitoring
   configure_sensor_response config_response;
-  ASSERT_TRUE(amber->configure_sensor(config_response, endpoints::get_sid(), 1,
-                                      25, 1000, 10, 10000, 1000, 1000000,
-                                      1000));
-  ASSERT_FALSE(amber->enable_learning(response, endpoints::get_sid(), 1000, 10,
-                                      10000, 1000, 1000000));
+  ASSERT_EQ(amber->configure_sensor(config_response, endpoints::get_sid(), 1,
+                                    25, 1000, 10, 10000, 1000, 1000000, 1000),
+            nullptr);
+  ASSERT_NE(amber->enable_learning(response, endpoints::get_sid(), 1000, 10,
+                                   10000, 1000, 1000000),
+            nullptr);
 }
 
 TEST_F(endpoints, DeleteSensor) {
-  ASSERT_TRUE(amber->delete_sensor(endpoints::get_sid()));
+  delete_sensor_response delete_sensor_response;
+  ASSERT_EQ(amber->delete_sensor(delete_sensor_response, endpoints::get_sid()),
+            nullptr);
 }
 
 TEST_F(endpoints, DeleteSensorNegative) {
   // sensor shouldn't be there anymore
-  ASSERT_FALSE(amber->delete_sensor(endpoints::get_sid()));
+  delete_sensor_response delete_sensor_response;
+  ASSERT_NE(amber->delete_sensor(delete_sensor_response, endpoints::get_sid()),
+            nullptr);
 }
+
 } // namespace

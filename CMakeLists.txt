@@ -32,8 +32,7 @@ find_package(ZLIB)
 add_library(
         ambersdk
         SHARED
-        amber_sdk.cpp
-)
+        src/amber_sdk.cpp)
 
 target_link_libraries(
         ambersdk
@@ -60,6 +59,12 @@ add_executable(
 )
 target_link_libraries(stream-advanced ambersdk curl ZLIB::ZLIB)
 
+add_executable(
+        pretrain
+        examples/pretrain.cpp
+)
+target_link_libraries(pretrain ambersdk curl ZLIB::ZLIB)
+
 ## GTEST ##
 # ctest doesn't play nicely with gtest SetUpTestSuite, disable built-in testing targets
 # enable_testing()
@@ -78,7 +83,7 @@ add_custom_target(
         COMMAND clang-format
         -style=LLVM
         -i
-        amber_sdk.cpp include/*.h test/*.cpp examples/*.cpp
+        src/amber_sdk.cpp include/*.h test/*.cpp examples/*.cpp
 )
 
 add_custom_target(

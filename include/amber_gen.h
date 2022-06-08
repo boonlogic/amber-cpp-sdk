@@ -1161,16 +1161,21 @@ public:
 class PostPretrainRequest {
 public:
   std::string data;
+  std::string format;
   bool autotuneConfig;
 
   friend void to_json(json &j, const PostPretrainRequest &r) {
     j["data"] = r.data;
+    j["format"] = r.format;
     j["autotuneConfig"] = r.autotuneConfig;
   };
 
   friend void from_json(const json &j, PostPretrainRequest &r) {
     if (j.contains("data") and !j.at("data").empty()) {
       r.data = j.at("data").get<std::string>();
+    }
+    if (j.contains("format") and !j.at("format").empty()) {
+      r.format = j.at("format").get<std::string>();
     }
     if (j.contains("autotuneConfig") and !j.at("autotuneConfig").empty()) {
       r.autotuneConfig = j.at("autotuneConfig").get<bool>();
@@ -1183,16 +1188,26 @@ public:
 class PostPretrainResponse {
 public:
   std::string state;
+  std::string amberTransaction;
+  std::string amberChunk;
   std::string message;
 
   friend void to_json(json &j, const PostPretrainResponse &r) {
     j["state"] = r.state;
+    j["amberTransaction"] = r.amberTransaction;
+    j["amberChunk"] = r.amberChunk;
     j["message"] = r.message;
   };
 
   friend void from_json(const json &j, PostPretrainResponse &r) {
     if (j.contains("state") and !j.at("state").empty()) {
       r.state = j.at("state").get<std::string>();
+    }
+    if (j.contains("amberTransaction") and !j.at("amberTransaction").empty()) {
+      r.amberTransaction = j.at("amberTransaction").get<std::string>();
+    }
+    if (j.contains("amberChunk") and !j.at("amberChunk").empty()) {
+      r.amberChunk = j.at("amberChunk").get<std::string>();
     }
     if (j.contains("message") and !j.at("message").empty()) {
       r.message = j.at("message").get<std::string>();
