@@ -122,7 +122,7 @@ bool amber_sdk::amber_init(const std::string &l_id, const std::string &l_file,
     this->license.oauth_server = getenv("AMBER_OAUTH_SERVER")
                                      ? getenv("AMBER_OAUTH_SERVER")
                                      : this->license.oauth_server;
-    if (this->license.oauth_server.length() == 0) {
+    if (this->license.oauth_server.size() == 0) {
       this->license.oauth_server = this->license.server;
     }
     this->set_cert(getenv("AMBER_SSL_CERT") ? getenv("AMBER_SSL_CERT") : cert);
@@ -233,6 +233,28 @@ amber_sdk::configure_fusion(configure_fusion_response &response,
     return new error_response(sdk_res.res.get<amber_models::Error>());
   }
   response = sdk_res.res.get<configure_fusion_response>();
+  return nullptr;
+}
+
+error_response *
+amber_sdk::stream_fusion(stream_fusion_response &response,
+                         const std::string &sensor_id,
+                         const amber_models::PutStreamRequest &request) {
+
+  // generate sdk request object
+  json j = request;
+  auto sdk_req = sdk_request{"PUT", "stream"};
+  sdk_req.body = j.dump();
+  sdk_req.headers["content-type"] = "application/json";
+  sdk_req.headers["sensorid"] = sensor_id;
+
+  // call api and process results
+  sdk_response sdk_res;
+  this->call_api(sdk_req, sdk_res);
+  if (sdk_res.code != 200) {
+    return new error_response(sdk_res.res.get<amber_models::Error>());
+  }
+  response = sdk_res.res.get<stream_fusion_response>();
   return nullptr;
 }
 
@@ -599,27 +621,26 @@ error_response *amber_sdk::get_root_cause_by_patternlist(
   return nullptr;
 }
 
-void amber_sdk::call_api(sdk_request &req, sdk_response &res, bool do_auth) {
-
-  res.code = 0;
-  res.err = nullptr;
-
-  // authenticate
-  if (do_auth) {
-    if (!this->authenticate(res)) {
-      return;
-    }
-  }
+void amber_sdk::call_api(sdk_request &req, sdk_response &res, bool is_auth) {
 
   // set up curl request
   CURL *curl;
   curl = curl_easy_init();
   struct curl_slist *hs = nullptr;
+  std::string url;
 
-  std::string url = this->license.server + '/' + req.slug + req.query_params;
+  res.code = 0;
 
-  // apply auth header
-  if (do_auth) {
+  // authenticate
+  if (is_auth) {
+    // this call is performing authentication so access oauth server
+    url = this->license.oauth_server + '/' + req.slug + req.query_params;
+  } else {
+    if (!this->authenticate(res)) {
+      curl_easy_cleanup(curl);
+      return;
+    }
+    url = this->license.server + '/' + req.slug + req.query_params;
     hs = curl_slist_append(hs, this->auth_bear_header.c_str());
   }
 
@@ -634,12 +655,12 @@ void amber_sdk::call_api(sdk_request &req, sdk_response &res, bool do_auth) {
 
   // apply operation
   if (req.operation == "POST") {
-    if (req.body.length() > 10000) {
+    if (req.body.size() > 10000) {
       req.body = compress_string(req.body);
       hs = curl_slist_append(hs, "Content-Encoding: gzip");
     }
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req.body.c_str());
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, req.body.length());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, req.body.size());
   } else if (req.operation == "PUT") {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req.body.c_str());
@@ -653,12 +674,12 @@ void amber_sdk::call_api(sdk_request &req, sdk_response &res, bool do_auth) {
 
   std::string read_buffer;   // response body
   std::string header_buffer; // response headers
-  std::string error_buffer;  // response headers
+  char error_buffer[CURL_ERROR_SIZE];
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
-  curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, &error_buffer);
+  curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error_buffer);
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, this->ssl.verify ? 1 : 0);
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, this->ssl.verify ? 1 : 0);
   curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header_buffer);
@@ -675,7 +696,6 @@ void amber_sdk::call_api(sdk_request &req, sdk_response &res, bool do_auth) {
   auto curl_result = curl_easy_perform(curl);
   if (curl_result == CURLE_OK) {
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res.code);
-    json message_response = json::parse(read_buffer);
     res.headers = parse_headers(header_buffer);
     res.res = json::parse(read_buffer);
   }
@@ -711,7 +731,7 @@ bool amber_sdk::authenticate(sdk_response &res) {
 
   // call api with auth disabled (since this is the oauth2 call itself)
   sdk_response sdk_res;
-  this->call_api(sdk_req, sdk_res, false);
+  this->call_api(sdk_req, sdk_res, true);
   if (sdk_res.code != 200) {
     this->auth_ok = false;
     return false;

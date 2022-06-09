@@ -3,17 +3,18 @@
 
 #include "amber_models.h"
 #include "nlohmann/json.hpp"
+#include <cstdarg>
 #include <ctime>
 #include <curl/curl.h>
 #include <exception>
-#include <stdarg.h>
 #include <string>
+#include <utility>
 
 using json = nlohmann::json;
 
 class amber_except : public std::exception {
 public:
-  amber_except(const char *fmt, ...) {
+  explicit amber_except(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     vsprintf(this->buffer, fmt, args);
@@ -22,7 +23,7 @@ public:
 
   char *what() { return this->buffer; }
 
-  char buffer[256];
+  char buffer[256]{};
 };
 
 typedef amber_models::PostSensorResponse create_sensor_response;
@@ -57,7 +58,6 @@ public:
   int code;
   std::map<std::string, std::string> headers;
   json res;
-  amber_models::Error *err;
 };
 
 class amber_sdk {
@@ -87,9 +87,9 @@ public:
 
   void verify_certificate(bool verify_cert) { ssl.verify = verify_cert; }
 
-  void set_cert(std::string cert) { ssl.cert = cert; }
+  void set_cert(std::string cert) { ssl.cert = std::move(cert); }
 
-  void set_cainfo(std::string cainfo) { ssl.cainfo = cainfo; }
+  void set_cainfo(std::string cainfo) { ssl.cainfo = std::move(cainfo); }
 
   error_response *create_sensor(amber_models::PostSensorResponse &response,
                                 std::string label);
@@ -122,7 +122,7 @@ public:
 
   error_response *stream_fusion(stream_fusion_response &response,
                                 const std::string &sensor_id,
-                                amber_models::PutStreamRequest request);
+                                const amber_models::PutStreamRequest &request);
 
   error_response *stream_sensor(stream_sensor_response &response,
                                 const std::string &sensor_id,
@@ -170,21 +170,21 @@ public:
   amber_models::license_entry license;
 
 private:
-  void call_api(sdk_request &req, sdk_response &res, bool do_auth = true);
+  void call_api(sdk_request &req, sdk_response &res, bool is_auth = false);
 
   bool authenticate(sdk_response &res);
 
   amber_models::PostAuth2Response auth;
-  uint64_t expires_in;
-  bool auth_ok;
-  std::time_t auth_time;
+  uint64_t expires_in{};
+  bool auth_ok{};
+  std::time_t auth_time{};
   std::string auth_bear_header;
   std::string license_id;
   std::string license_file;
 
   // ssl options
   struct {
-    bool verify;
+    bool verify{};
     std::string cert;
     std::string cainfo;
   } ssl;
