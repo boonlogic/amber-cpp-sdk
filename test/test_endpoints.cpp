@@ -312,6 +312,32 @@ TEST_F(endpoints, GetRootCauseNegative) {
             nullptr);
 }
 
+TEST_F(endpoints, PostOutage) {
+  post_outage_response expected;
+  expected.clusterCount = 581;
+  expected.message = "";
+  expected.retryCount = 0;
+  expected.state = "Monitoring";
+  expected.streamingWindowSize = 25;
+  expected.totalInferences = 31030;
+
+  post_outage_response response;
+  error_response *error = amber->post_outage(response, endpoints::get_sid());
+  ASSERT_EQ(error, nullptr);
+  EXPECT_EQ(expected.clusterCount, response.clusterCount);
+  EXPECT_EQ(expected.message, response.message);
+  EXPECT_EQ(expected.retryCount, response.retryCount);
+  EXPECT_EQ(expected.state, response.state);
+  EXPECT_EQ(expected.streamingWindowSize, response.streamingWindowSize);
+  EXPECT_EQ(expected.totalInferences, response.totalInferences);
+}
+
+TEST_F(endpoints, PostOutageNegative) {
+  post_outage_response response;
+  std::string badSensor = "bogus-sensor";
+  ASSERT_NE(amber->post_outage(response, badSensor), nullptr);
+}
+
 TEST_F(endpoints, EnableLearning) {
   enable_learning_response expected;
   expected.streaming.anomalyHistoryWindow = 1000;

@@ -158,6 +158,54 @@ public:
   AMBER_DUMP()
 };
 
+class StreamStatus {
+public:
+  std::string state;
+  std::string message;
+  uint16_t progress;
+  uint32_t clusterCount;
+  uint16_t retryCount;
+  uint16_t streamingWindowSize;
+  uint64_t totalInferences;
+
+  friend void to_json(json &j, const StreamStatus &r) {
+    j["state"] = r.state;
+    j["message"] = r.message;
+    j["progress"] = r.progress;
+    j["clusterCount"] = r.clusterCount;
+    j["retryCount"] = r.retryCount;
+    j["streamingWindowSize"] = r.streamingWindowSize;
+    j["totalInferences"] = r.totalInferences;
+  };
+
+  friend void from_json(const json &j, StreamStatus &r) {
+    if (j.contains("state") and !j.at("state").empty()) {
+      r.state = j.at("state").get<std::string>();
+    }
+    if (j.contains("message") and !j.at("message").empty()) {
+      r.message = j.at("message").get<std::string>();
+    }
+    if (j.contains("progress") and !j.at("progress").empty()) {
+      r.progress = j.at("progress").get<uint16_t>();
+    }
+    if (j.contains("clusterCount") and !j.at("clusterCount").empty()) {
+      r.clusterCount = j.at("clusterCount").get<uint32_t>();
+    }
+    if (j.contains("retryCount") and !j.at("retryCount").empty()) {
+      r.retryCount = j.at("retryCount").get<uint16_t>();
+    }
+    if (j.contains("streamingWindowSize") and
+        !j.at("streamingWindowSize").empty()) {
+      r.streamingWindowSize = j.at("streamingWindowSize").get<uint16_t>();
+    }
+    if (j.contains("totalInferences") and !j.at("totalInferences").empty()) {
+      r.totalInferences = j.at("totalInferences").get<uint64_t>();
+    }
+  };
+
+  AMBER_DUMP()
+};
+
 class PutStreamFeature {
 public:
   std::string label;
@@ -253,6 +301,7 @@ public:
 class SensorUsageInfo {
 public:
   EndpointUsageInfo postConfig;
+  EndpointUsageInfo postOutage;
   StreamingEndpointUsageInfo postStream;
   EndpointUsageInfo putSensor;
   EndpointUsageInfo getSensor;
@@ -265,6 +314,7 @@ public:
 
   friend void to_json(json &j, const SensorUsageInfo &r) {
     j["postConfig"] = r.postConfig;
+    j["postOutage"] = r.postOutage;
     j["postStream"] = r.postStream;
     j["putSensor"] = r.putSensor;
     j["getSensor"] = r.getSensor;
@@ -279,6 +329,9 @@ public:
   friend void from_json(const json &j, SensorUsageInfo &r) {
     if (j.contains("postConfig") and !j.at("postConfig").empty()) {
       r.postConfig = j.at("postConfig").get<EndpointUsageInfo>();
+    }
+    if (j.contains("postOutage") and !j.at("postOutage").empty()) {
+      r.postOutage = j.at("postOutage").get<EndpointUsageInfo>();
     }
     if (j.contains("postStream") and !j.at("postStream").empty()) {
       r.postStream = j.at("postStream").get<StreamingEndpointUsageInfo>();
@@ -306,54 +359,6 @@ public:
     }
     if (j.contains("getPretrain") and !j.at("getPretrain").empty()) {
       r.getPretrain = j.at("getPretrain").get<EndpointUsageInfo>();
-    }
-  };
-
-  AMBER_DUMP()
-};
-
-class StreamStatus {
-public:
-  std::string state;
-  std::string message;
-  uint16_t progress;
-  uint32_t clusterCount;
-  uint16_t retryCount;
-  uint16_t streamingWindowSize;
-  uint64_t totalInferences;
-
-  friend void to_json(json &j, const StreamStatus &r) {
-    j["state"] = r.state;
-    j["message"] = r.message;
-    j["progress"] = r.progress;
-    j["clusterCount"] = r.clusterCount;
-    j["retryCount"] = r.retryCount;
-    j["streamingWindowSize"] = r.streamingWindowSize;
-    j["totalInferences"] = r.totalInferences;
-  };
-
-  friend void from_json(const json &j, StreamStatus &r) {
-    if (j.contains("state") and !j.at("state").empty()) {
-      r.state = j.at("state").get<std::string>();
-    }
-    if (j.contains("message") and !j.at("message").empty()) {
-      r.message = j.at("message").get<std::string>();
-    }
-    if (j.contains("progress") and !j.at("progress").empty()) {
-      r.progress = j.at("progress").get<uint16_t>();
-    }
-    if (j.contains("clusterCount") and !j.at("clusterCount").empty()) {
-      r.clusterCount = j.at("clusterCount").get<uint32_t>();
-    }
-    if (j.contains("retryCount") and !j.at("retryCount").empty()) {
-      r.retryCount = j.at("retryCount").get<uint16_t>();
-    }
-    if (j.contains("streamingWindowSize") and
-        !j.at("streamingWindowSize").empty()) {
-      r.streamingWindowSize = j.at("streamingWindowSize").get<uint16_t>();
-    }
-    if (j.contains("totalInferences") and !j.at("totalInferences").empty()) {
-      r.totalInferences = j.at("totalInferences").get<uint64_t>();
     }
   };
 
@@ -1546,6 +1551,54 @@ public:
     }
     if (j.contains("password") and !j.at("password").empty()) {
       r.password = j.at("password").get<std::string>();
+    }
+  };
+
+  AMBER_DUMP()
+};
+
+class PostOutageResponse {
+public:
+  std::string state;
+  std::string message;
+  uint16_t progress;
+  uint32_t clusterCount;
+  uint16_t retryCount;
+  uint16_t streamingWindowSize;
+  uint64_t totalInferences;
+
+  friend void to_json(json &j, const PostOutageResponse &r) {
+    j["state"] = r.state;
+    j["message"] = r.message;
+    j["progress"] = r.progress;
+    j["clusterCount"] = r.clusterCount;
+    j["retryCount"] = r.retryCount;
+    j["streamingWindowSize"] = r.streamingWindowSize;
+    j["totalInferences"] = r.totalInferences;
+  };
+
+  friend void from_json(const json &j, PostOutageResponse &r) {
+    if (j.contains("state") and !j.at("state").empty()) {
+      r.state = j.at("state").get<std::string>();
+    }
+    if (j.contains("message") and !j.at("message").empty()) {
+      r.message = j.at("message").get<std::string>();
+    }
+    if (j.contains("progress") and !j.at("progress").empty()) {
+      r.progress = j.at("progress").get<uint16_t>();
+    }
+    if (j.contains("clusterCount") and !j.at("clusterCount").empty()) {
+      r.clusterCount = j.at("clusterCount").get<uint32_t>();
+    }
+    if (j.contains("retryCount") and !j.at("retryCount").empty()) {
+      r.retryCount = j.at("retryCount").get<uint16_t>();
+    }
+    if (j.contains("streamingWindowSize") and
+        !j.at("streamingWindowSize").empty()) {
+      r.streamingWindowSize = j.at("streamingWindowSize").get<uint16_t>();
+    }
+    if (j.contains("totalInferences") and !j.at("totalInferences").empty()) {
+      r.totalInferences = j.at("totalInferences").get<uint64_t>();
     }
   };
 

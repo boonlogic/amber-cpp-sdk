@@ -37,6 +37,7 @@ typedef amber_models::PutStreamResponse stream_fusion_response;
 typedef amber_models::PostStreamResponse stream_sensor_response;
 typedef amber_models::PutConfigResponse enable_learning_response;
 typedef amber_models::PostPretrainResponse pretrain_sensor_response;
+typedef amber_models::PostOutageResponse post_outage_response;
 typedef amber_models::GetPretrainResponse get_pretrain_response;
 typedef amber_models::GetStatusResponse get_status_response;
 typedef amber_models::GetConfigResponse get_config_response;
@@ -135,6 +136,9 @@ public:
                                   uint64_t learning_rate_denominator = 2000,
                                   uint16_t learning_max_clusters = 1000,
                                   uint64_t learning_max_samples = 1000000);
+
+  error_response *post_outage(post_outage_response &response,
+                              const std::string &sensor_id);
 
   error_response *pretrain_sensor(pretrain_sensor_response &response,
                                   const std::string &sensor_id,

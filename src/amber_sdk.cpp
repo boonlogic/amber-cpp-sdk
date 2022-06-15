@@ -385,6 +385,24 @@ error_response *amber_sdk::enable_learning(enable_learning_response &response,
   return nullptr;
 }
 
+error_response *amber_sdk::post_outage(post_outage_response &response,
+                                       const std::string &sensor_id) {
+
+  // generate sdk request object
+  auto sdk_req = sdk_request{"POST", "outage"};
+  sdk_req.headers["content-type"] = "application/json";
+  sdk_req.headers["sensorid"] = sensor_id;
+
+  // call api and process results
+  sdk_response sdk_res;
+  this->call_api(sdk_req, sdk_res);
+  if (sdk_res.code != 200) {
+    return new error_response(sdk_res.res.get<error_response>());
+  }
+  response = sdk_res.res.get<post_outage_response>();
+  return nullptr;
+}
+
 error_response *
 amber_sdk::pretrain_sensor_xl(pretrain_sensor_response &response,
                               const std::string &sensor_id, std::string csvdata,

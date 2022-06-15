@@ -201,6 +201,24 @@ int main(int argc, char *argv[]) {
     err->dump();
   }
 
+  // enable learning
+  enable_learning_response enable_learning_response;
+  err = amber->enable_learning(enable_learning_response, my_sensor);
+  if (!err) {
+    enable_learning_response.dump();
+  } else {
+    err->dump();
+  }
+
+  // post outage
+  post_outage_response post_outage_response;
+  err = amber->post_outage(post_outage_response, my_sensor);
+  if (!err) {
+    post_outage_response.dump();
+  } else {
+    err->dump();
+  }
+
   // delete a sensor
   if (sensor_created) {
     delete_sensor_response delete_sensor_response;
