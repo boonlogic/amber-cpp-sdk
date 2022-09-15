@@ -1,5 +1,8 @@
 image: 715859896688.dkr.ecr.us-east-1.amazonaws.com/pipeline-x86-ubuntu:latest
 
+include:
+  - template: 'Workflows/Boon-Pipelines.gitlab-ci.yml'
+
 before_script:
   - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client git -y )'
   - eval $(ssh-agent -s)
