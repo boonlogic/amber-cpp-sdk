@@ -269,7 +269,7 @@ TEST_F(endpoints, StreamSensor) {
   EXPECT_EQ(response.state, "Monitoring");
   EXPECT_EQ(response.message, "");
   EXPECT_EQ(response.progress, 0);
-  EXPECT_EQ(response.clusterCount, 581);
+  EXPECT_EQ(response.clusterCount, 582);
   EXPECT_EQ(response.retryCount, 0);
   EXPECT_EQ(response.streamingWindowSize, 25);
   /*
