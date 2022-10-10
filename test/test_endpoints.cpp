@@ -252,7 +252,7 @@ TEST_F(endpoints, GetStatus) {
   get_status_response response;
   ASSERT_EQ(amber->get_status(response, endpoints::get_sid()), nullptr);
   EXPECT_TRUE(!response.pca.value.empty());
-  EXPECT_EQ(response.numClusters, 581);
+  EXPECT_EQ(response.numClusters, 582);
 }
 
 TEST_F(endpoints, GetStatusNegative) {
@@ -314,7 +314,7 @@ TEST_F(endpoints, GetRootCauseNegative) {
 
 TEST_F(endpoints, PostOutage) {
   post_outage_response expected;
-  expected.clusterCount = 581;
+  expected.clusterCount = 582;
   expected.message = "";
   expected.retryCount = 0;
   expected.state = "Monitoring";
