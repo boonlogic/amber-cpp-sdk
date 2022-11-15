@@ -74,7 +74,7 @@ test-aol:
     - export API_ID="qa-${CI_JOB_ID}"
     - ./amber aws create-test-config --api ${API_ID} > ${CI_PROJECT_DIR}/ci-root/packages/amber-cpp-sdk/amber-cpp-sdk/Amber.license
     - ./amber aws create-deployment --function dev:${API_ID} --release rel-0.0.598
-    - echo -n "*** sleep for 30 seconds to allow api gateway to be fully up... " && sleep 30 && echo "(done)"
+    - echo -n "*** sleep for 90 seconds to allow api gateway to be fully up... " && sleep 90 && echo "(done)"
     - cd ${CI_PROJECT_DIR}/ci-root/packages/expert-server/expert-api
     - make deploy-amber-lambda-${API_ID}
     - echo -n "*** sleep for 5 seconds to allow lambda to be fully up... " && sleep 5 && echo "(done)"

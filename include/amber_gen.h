@@ -145,6 +145,43 @@ public:
   AMBER_DUMP()
 };
 
+class LearningParameters {
+public:
+  uint64_t learningRateNumerator;
+  uint64_t learningRateDenominator;
+  uint16_t learningMaxClusters;
+  uint64_t learningMaxSamples;
+
+  friend void to_json(json &j, const LearningParameters &r) {
+    j["learningRateNumerator"] = r.learningRateNumerator;
+    j["learningRateDenominator"] = r.learningRateDenominator;
+    j["learningMaxClusters"] = r.learningMaxClusters;
+    j["learningMaxSamples"] = r.learningMaxSamples;
+  };
+
+  friend void from_json(const json &j, LearningParameters &r) {
+    if (j.contains("learningRateNumerator") and
+        !j.at("learningRateNumerator").empty()) {
+      r.learningRateNumerator = j.at("learningRateNumerator").get<uint64_t>();
+    }
+    if (j.contains("learningRateDenominator") and
+        !j.at("learningRateDenominator").empty()) {
+      r.learningRateDenominator =
+          j.at("learningRateDenominator").get<uint64_t>();
+    }
+    if (j.contains("learningMaxClusters") and
+        !j.at("learningMaxClusters").empty()) {
+      r.learningMaxClusters = j.at("learningMaxClusters").get<uint16_t>();
+    }
+    if (j.contains("learningMaxSamples") and
+        !j.at("learningMaxSamples").empty()) {
+      r.learningMaxSamples = j.at("learningMaxSamples").get<uint64_t>();
+    }
+  };
+
+  AMBER_DUMP()
+};
+
 class Float32Array {
 public:
   std::vector<float> value;
@@ -387,13 +424,17 @@ public:
   uint16_t retryCount;
   uint16_t streamingWindowSize;
   uint64_t totalInferences;
+  Int32Array iD;
   Uint16Array rI;
   Uint16Array sI;
   Uint16Array aD;
   Uint16Array aH;
   Float32Array aM;
   Uint16Array aW;
-  Int32Array iD;
+  Uint16Array nI;
+  Uint16Array nS;
+  Float32Array nW;
+  Float32Array oM;
 
   friend void to_json(json &j, const PostStreamResponse &r) {
     j["state"] = r.state;
@@ -403,13 +444,17 @@ public:
     j["retryCount"] = r.retryCount;
     j["streamingWindowSize"] = r.streamingWindowSize;
     j["totalInferences"] = r.totalInferences;
+    j["ID"] = r.iD;
     j["RI"] = r.rI;
     j["SI"] = r.sI;
     j["AD"] = r.aD;
     j["AH"] = r.aH;
     j["AM"] = r.aM;
     j["AW"] = r.aW;
-    j["ID"] = r.iD;
+    j["NI"] = r.nI;
+    j["NS"] = r.nS;
+    j["NW"] = r.nW;
+    j["OM"] = r.oM;
   };
 
   friend void from_json(const json &j, PostStreamResponse &r) {
@@ -435,6 +480,9 @@ public:
     if (j.contains("totalInferences") and !j.at("totalInferences").empty()) {
       r.totalInferences = j.at("totalInferences").get<uint64_t>();
     }
+    if (j.contains("ID") and !j.at("ID").empty()) {
+      r.iD = j.at("ID").get<Int32Array>();
+    }
     if (j.contains("RI") and !j.at("RI").empty()) {
       r.rI = j.at("RI").get<Uint16Array>();
     }
@@ -453,8 +501,17 @@ public:
     if (j.contains("AW") and !j.at("AW").empty()) {
       r.aW = j.at("AW").get<Uint16Array>();
     }
-    if (j.contains("ID") and !j.at("ID").empty()) {
-      r.iD = j.at("ID").get<Int32Array>();
+    if (j.contains("NI") and !j.at("NI").empty()) {
+      r.nI = j.at("NI").get<Uint16Array>();
+    }
+    if (j.contains("NS") and !j.at("NS").empty()) {
+      r.nS = j.at("NS").get<Uint16Array>();
+    }
+    if (j.contains("NW") and !j.at("NW").empty()) {
+      r.nW = j.at("NW").get<Float32Array>();
+    }
+    if (j.contains("OM") and !j.at("OM").empty()) {
+      r.oM = j.at("OM").get<Float32Array>();
     }
   };
 
@@ -1318,6 +1375,7 @@ public:
   std::vector<FeatureConfig> features;
   float percentVariation;
   uint32_t samplesToBuffer;
+  float percentVariationOverride;
 
   friend void to_json(json &j, const GetConfigResponse &r) {
     j["anomalyHistoryWindow"] = r.anomalyHistoryWindow;
@@ -1330,6 +1388,7 @@ public:
     j["features"] = r.features;
     j["percentVariation"] = r.percentVariation;
     j["samplesToBuffer"] = r.samplesToBuffer;
+    j["percentVariationOverride"] = r.percentVariationOverride;
   };
 
   friend void from_json(const json &j, GetConfigResponse &r) {
@@ -1370,6 +1429,11 @@ public:
     if (j.contains("samplesToBuffer") and !j.at("samplesToBuffer").empty()) {
       r.samplesToBuffer = j.at("samplesToBuffer").get<uint32_t>();
     }
+    if (j.contains("percentVariationOverride") and
+        !j.at("percentVariationOverride").empty()) {
+      r.percentVariationOverride =
+          j.at("percentVariationOverride").get<float>();
+    }
   };
 
   AMBER_DUMP()
@@ -1395,7 +1459,7 @@ public:
 class PutConfigRequest {
 public:
   std::vector<FusionConfig> features;
-  StreamingParameters streaming;
+  LearningParameters streaming;
 
   friend void to_json(json &j, const PutConfigRequest &r) {
     j["features"] = r.features;
@@ -1407,7 +1471,7 @@ public:
       r.features = j.at("features").get<std::vector<FusionConfig>>();
     }
     if (j.contains("streaming") and !j.at("streaming").empty()) {
-      r.streaming = j.at("streaming").get<StreamingParameters>();
+      r.streaming = j.at("streaming").get<LearningParameters>();
     }
   };
 
@@ -1417,7 +1481,7 @@ public:
 class PutConfigResponse {
 public:
   std::vector<FusionConfig> features;
-  StreamingParameters streaming;
+  LearningParameters streaming;
 
   friend void to_json(json &j, const PutConfigResponse &r) {
     j["features"] = r.features;
@@ -1429,7 +1493,7 @@ public:
       r.features = j.at("features").get<std::vector<FusionConfig>>();
     }
     if (j.contains("streaming") and !j.at("streaming").empty()) {
-      r.streaming = j.at("streaming").get<StreamingParameters>();
+      r.streaming = j.at("streaming").get<LearningParameters>();
     }
   };
 
@@ -1447,6 +1511,7 @@ public:
   uint16_t streamingWindowSize;
   std::vector<FeatureConfig> features;
   uint32_t samplesToBuffer;
+  float percentVariationOverride;
 
   friend void to_json(json &j, const PostConfigRequest &r) {
     j["anomalyHistoryWindow"] = r.anomalyHistoryWindow;
@@ -1458,6 +1523,7 @@ public:
     j["streamingWindowSize"] = r.streamingWindowSize;
     j["features"] = r.features;
     j["samplesToBuffer"] = r.samplesToBuffer;
+    j["percentVariationOverride"] = r.percentVariationOverride;
   };
 
   friend void from_json(const json &j, PostConfigRequest &r) {
@@ -1494,6 +1560,11 @@ public:
     }
     if (j.contains("samplesToBuffer") and !j.at("samplesToBuffer").empty()) {
       r.samplesToBuffer = j.at("samplesToBuffer").get<uint32_t>();
+    }
+    if (j.contains("percentVariationOverride") and
+        !j.at("percentVariationOverride").empty()) {
+      r.percentVariationOverride =
+          j.at("percentVariationOverride").get<float>();
     }
   };
 
@@ -1798,6 +1869,7 @@ public:
   uint16_t streamingWindowSize;
   std::vector<FeatureConfig> features;
   uint32_t samplesToBuffer;
+  float percentVariationOverride;
 
   friend void to_json(json &j, const PostConfigResponse &r) {
     j["anomalyHistoryWindow"] = r.anomalyHistoryWindow;
@@ -1809,6 +1881,7 @@ public:
     j["streamingWindowSize"] = r.streamingWindowSize;
     j["features"] = r.features;
     j["samplesToBuffer"] = r.samplesToBuffer;
+    j["percentVariationOverride"] = r.percentVariationOverride;
   };
 
   friend void from_json(const json &j, PostConfigResponse &r) {
@@ -1845,6 +1918,11 @@ public:
     }
     if (j.contains("samplesToBuffer") and !j.at("samplesToBuffer").empty()) {
       r.samplesToBuffer = j.at("samplesToBuffer").get<uint32_t>();
+    }
+    if (j.contains("percentVariationOverride") and
+        !j.at("percentVariationOverride").empty()) {
+      r.percentVariationOverride =
+          j.at("percentVariationOverride").get<float>();
     }
   };
 
