@@ -363,9 +363,9 @@ error_response *amber_sdk::enable_learning(enable_learning_response &response,
                                            uint64_t learning_max_samples) {
 
   // generate sdk request object
-  amber_models::StreamingParameters streaming{
-      anomaly_history_window, learning_rate_numerator,
-      learning_rate_denominator, learning_max_clusters, learning_max_samples};
+  amber_models::LearningParameters streaming{
+      learning_rate_numerator, learning_rate_denominator, learning_max_clusters,
+      learning_max_samples};
   std::vector<amber_models::FusionConfig> fusion_config;
   amber_models::PutConfigRequest request{fusion_config, streaming};
   json j = request;

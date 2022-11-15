@@ -207,6 +207,12 @@ TEST_F(endpoints, GetPretrainNegative) {
 
 TEST_F(endpoints, PretrainSensor) {
   pretrain_sensor_response response;
+
+  // not enough data to fill the buffer
+  std::string csvdata = "1,2,3,4,5";
+  ASSERT_EQ(amber->pretrain_sensor(response, sensor_id, csvdata, false),
+            nullptr);
+
   // Read in pretrain data //
   std::string traindata, line;
   std::ifstream myFile("./data/pretrain-data.csv");
@@ -242,17 +248,13 @@ TEST_F(endpoints, PretrainSensorNegative) {
   std::string bad_sensor_id = "bogus-sensor-id";
   std::string csvdata = "1,2,3,4,5";
   ASSERT_NE(amber->pretrain_sensor(response, bad_sensor_id, csvdata), nullptr);
-
-  // not enough data to fill the buffer
-  ASSERT_NE(amber->pretrain_sensor(response, sensor_id, csvdata, false),
-            nullptr);
 }
 
 TEST_F(endpoints, GetStatus) {
   get_status_response response;
   ASSERT_EQ(amber->get_status(response, endpoints::get_sid()), nullptr);
   EXPECT_TRUE(!response.pca.value.empty());
-  EXPECT_EQ(response.numClusters, 582);
+  EXPECT_EQ(response.numClusters, 345);
 }
 
 TEST_F(endpoints, GetStatusNegative) {
@@ -269,16 +271,15 @@ TEST_F(endpoints, StreamSensor) {
   EXPECT_EQ(response.state, "Monitoring");
   EXPECT_EQ(response.message, "");
   EXPECT_EQ(response.progress, 0);
-  EXPECT_EQ(response.clusterCount, 582);
+  EXPECT_EQ(response.clusterCount, 345);
   EXPECT_EQ(response.retryCount, 0);
   EXPECT_EQ(response.streamingWindowSize, 25);
-  /*
-  EXPECT_EQ(!response.SI.empty());
-  EXPECT_EQ(!response.AD.empty());
-  EXPECT_EQ(!response.AH.empty());
-  EXPECT_EQ(!response.AM.empty());
-  EXPECT_EQ(!response.AW.empty());
-  */
+
+  // EXPECT_NE(response.sI, NULL);
+  // EXPECT_EQ(!response.aD.empty(), true);
+  // EXPECT_EQ(!response.aH.empty(), true);
+  // EXPECT_EQ(!response.aM.empty(), true);
+  // EXPECT_EQ(!response.aW.empty(), true);
 
   // EXPECT_EQ(response.SI, 3);
 }
@@ -314,7 +315,7 @@ TEST_F(endpoints, GetRootCauseNegative) {
 
 TEST_F(endpoints, PostOutage) {
   post_outage_response expected;
-  expected.clusterCount = 582;
+  expected.clusterCount = 345;
   expected.message = "";
   expected.retryCount = 0;
   expected.state = "Monitoring";
@@ -340,7 +341,6 @@ TEST_F(endpoints, PostOutageNegative) {
 
 TEST_F(endpoints, EnableLearning) {
   enable_learning_response expected;
-  expected.streaming.anomalyHistoryWindow = 1000;
   expected.streaming.learningRateNumerator = 10;
   expected.streaming.learningRateDenominator = 10000;
   expected.streaming.learningMaxClusters = 1000;
@@ -351,8 +351,6 @@ TEST_F(endpoints, EnableLearning) {
                                    10000, 1000, 1000000),
             nullptr);
 
-  EXPECT_EQ(expected.streaming.anomalyHistoryWindow,
-            response.streaming.anomalyHistoryWindow);
   EXPECT_EQ(expected.streaming.learningRateNumerator,
             response.streaming.learningRateNumerator);
   EXPECT_EQ(expected.streaming.learningRateDenominator,
