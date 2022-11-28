@@ -17,7 +17,7 @@ public:
   explicit amber_except(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
-    vsprintf(this->buffer, fmt, args);
+    vsnprintf(this->buffer, sizeof(this->buffer), fmt, args);
     va_end(args);
   };
 

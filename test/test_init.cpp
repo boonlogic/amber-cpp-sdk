@@ -11,13 +11,18 @@ namespace {
 
 TEST(amber_sdk, Environment) { ASSERT_TRUE(getenv("AMBER_TEST_LICENSE_ID")); }
 
-TEST(amber_sdk, Constructors) {
+class ConstructorTest : public ::testing::Test {
+protected:
+  void SetUp() override { saved_env = clear_env_variables(); }
+  void TearDown() override { restore_env_variables(saved_env); }
+  json saved_env;
+};
 
-  json saved_env = clear_env_variables();
-
-  amber_sdk *amber = NULL;
+TEST_F(ConstructorTest, Constructors) {
 
   // set credentials using license file
+  amber_sdk *amber;
+
   try {
     amber = new amber_sdk("default", "test/test.Amber.license");
     ASSERT_EQ(amber->license.username, "admin");
@@ -50,8 +55,6 @@ TEST(amber_sdk, Constructors) {
     setenv("AMBER_USERNAME", "xyyyAmberUser", 1);
     setenv("AMBER_PASSWORD", "bogus_password", 1);
     setenv("AMBER_SERVER", "https://temp.amber.boonlogic.com/v1", 1);
-    setenv("AMBER_SSL_CERT", "bogus_ssl_cert", 1);
-    setenv("AMBER_SSL_VERIFY", "false", 1);
     amber = new amber_sdk("", "");
     EXPECT_EQ(amber->license.username, "xyyyAmberUser");
     EXPECT_EQ(amber->license.password, "bogus_password");
@@ -60,12 +63,9 @@ TEST(amber_sdk, Constructors) {
   } catch (amber_except &e) {
     ASSERT_TRUE(false) << e.what();
   }
-
-  restore_env_variables(saved_env);
 }
 
-TEST(amber_sdk, ConstructorsNegative) {
-  json saved_env = clear_env_variables();
+TEST_F(ConstructorTest, ConstructorsNegative) {
 
   EXPECT_THROW(new amber_sdk("default", "nonexistent-license-file"),
                amber_except);
@@ -78,7 +78,5 @@ TEST(amber_sdk, ConstructorsNegative) {
                amber_except);
   EXPECT_THROW(new amber_sdk("missing-server", "test/test.Amber.license"),
                amber_except);
-
-  restore_env_variables(saved_env);
 }
 } // namespace
