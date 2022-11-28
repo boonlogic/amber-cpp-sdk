@@ -21,9 +21,6 @@ amber_sdk *create_amber_client() {
     assert("AMBER_TEST_LICENSE_ID required in environment");
   }
 
-  // purge AMBER environment variables
-  clear_env_variables();
-
   if (amber_license_file) {
     // load license profile using a local license file
     ac = new amber_sdk(amber_license_id, amber_license_file);
@@ -72,15 +69,16 @@ json get_secrets() {
 }
 
 json clear_env_variables() {
-
-  json saved_profile{{"AMBER_LICENSE_FILE", NULL}, {"AMBER_LICENSE_ID", NULL},
-                     {"AMBER_USERNAME", NULL},     {"AMBER_PASSWORD", NULL},
-                     {"AMBER_SERVER", NULL},       {"AMBER_OAUTH_SERVER", NULL},
-                     {"AMBER_SSL_CERT", NULL},     {"AMBER_SSL_VERIFY", NULL}};
+  json saved_profile = json::object({{"AMBER_LICENSE_FILE", NULL},
+                                     {"AMBER_LICENSE_ID", NULL},
+                                     {"AMBER_USERNAME", NULL},
+                                     {"AMBER_PASSWORD", NULL},
+                                     {"AMBER_SERVER", NULL},
+                                     {"AMBER_OAUTH_SERVER", NULL}});
 
   for (auto it : saved_profile.items()) {
     if (getenv(it.key().c_str())) {
-      saved_profile[it.key()] = getenv(it.key().c_str());
+      saved_profile[it.key()] = std::string(getenv(it.key().c_str()));
       unsetenv(it.key().c_str());
     }
   }
@@ -96,7 +94,9 @@ void restore_env_variables(json saved_env) {
   // load environment from saved profile
   for (auto it : saved_env.items()) {
     if (it.value() != NULL) {
-      setenv(it.key().c_str(), std::string(saved_env[it.key()]).c_str(), 1);
+      std::string mykey = it.key();
+      std::string myval = saved_env[mykey];
+      setenv(mykey.c_str(), myval.c_str(), 1);
     }
   }
 }

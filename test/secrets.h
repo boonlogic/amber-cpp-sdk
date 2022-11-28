@@ -6,8 +6,7 @@
 static nlohmann::json env_mappings = {
     {"AMBER_LICENSE_ID", "license_id"}, {"AMBER_LICENSE_FILE", "license_file"},
     {"AMBER_USERNAME", "username"},     {"AMBER_PASSWORD", "password"},
-    {"AMBER_SERVER", "server"},         {"AMBER_OAUTH_SERVER", "oauth-server"},
-    {"AMBER_SSL_CERT", "ssl-cert"},     {"AMBER_SSL_VERIFY", "ssl-verify"}};
+    {"AMBER_SERVER", "server"},         {"AMBER_OAUTH_SERVER", "oauth-server"}};
 
 amber_sdk* create_amber_client();
 
