@@ -204,6 +204,8 @@ public:
   uint16_t retryCount;
   uint16_t streamingWindowSize;
   uint64_t totalInferences;
+  uint64_t lastModified;
+  uint64_t lastModifiedDelta;
 
   friend void to_json(json &j, const StreamStatus &r) {
     j["state"] = r.state;
@@ -213,6 +215,8 @@ public:
     j["retryCount"] = r.retryCount;
     j["streamingWindowSize"] = r.streamingWindowSize;
     j["totalInferences"] = r.totalInferences;
+    j["lastModified"] = r.lastModified;
+    j["lastModifiedDelta"] = r.lastModifiedDelta;
   };
 
   friend void from_json(const json &j, StreamStatus &r) {
@@ -237,6 +241,13 @@ public:
     }
     if (j.contains("totalInferences") and !j.at("totalInferences").empty()) {
       r.totalInferences = j.at("totalInferences").get<uint64_t>();
+    }
+    if (j.contains("lastModified") and !j.at("lastModified").empty()) {
+      r.lastModified = j.at("lastModified").get<uint64_t>();
+    }
+    if (j.contains("lastModifiedDelta") and
+        !j.at("lastModifiedDelta").empty()) {
+      r.lastModifiedDelta = j.at("lastModifiedDelta").get<uint64_t>();
     }
   };
 
@@ -424,6 +435,8 @@ public:
   uint16_t retryCount;
   uint16_t streamingWindowSize;
   uint64_t totalInferences;
+  uint64_t lastModified;
+  uint64_t lastModifiedDelta;
   Int32Array iD;
   Uint16Array rI;
   Uint16Array sI;
@@ -444,6 +457,8 @@ public:
     j["retryCount"] = r.retryCount;
     j["streamingWindowSize"] = r.streamingWindowSize;
     j["totalInferences"] = r.totalInferences;
+    j["lastModified"] = r.lastModified;
+    j["lastModifiedDelta"] = r.lastModifiedDelta;
     j["ID"] = r.iD;
     j["RI"] = r.rI;
     j["SI"] = r.sI;
@@ -479,6 +494,13 @@ public:
     }
     if (j.contains("totalInferences") and !j.at("totalInferences").empty()) {
       r.totalInferences = j.at("totalInferences").get<uint64_t>();
+    }
+    if (j.contains("lastModified") and !j.at("lastModified").empty()) {
+      r.lastModified = j.at("lastModified").get<uint64_t>();
+    }
+    if (j.contains("lastModifiedDelta") and
+        !j.at("lastModifiedDelta").empty()) {
+      r.lastModifiedDelta = j.at("lastModifiedDelta").get<uint64_t>();
     }
     if (j.contains("ID") and !j.at("ID").empty()) {
       r.iD = j.at("ID").get<Int32Array>();
@@ -1637,6 +1659,8 @@ public:
   uint16_t retryCount;
   uint16_t streamingWindowSize;
   uint64_t totalInferences;
+  uint64_t lastModified;
+  uint64_t lastModifiedDelta;
 
   friend void to_json(json &j, const PostOutageResponse &r) {
     j["state"] = r.state;
@@ -1646,6 +1670,8 @@ public:
     j["retryCount"] = r.retryCount;
     j["streamingWindowSize"] = r.streamingWindowSize;
     j["totalInferences"] = r.totalInferences;
+    j["lastModified"] = r.lastModified;
+    j["lastModifiedDelta"] = r.lastModifiedDelta;
   };
 
   friend void from_json(const json &j, PostOutageResponse &r) {
@@ -1670,6 +1696,13 @@ public:
     }
     if (j.contains("totalInferences") and !j.at("totalInferences").empty()) {
       r.totalInferences = j.at("totalInferences").get<uint64_t>();
+    }
+    if (j.contains("lastModified") and !j.at("lastModified").empty()) {
+      r.lastModified = j.at("lastModified").get<uint64_t>();
+    }
+    if (j.contains("lastModifiedDelta") and
+        !j.at("lastModifiedDelta").empty()) {
+      r.lastModifiedDelta = j.at("lastModifiedDelta").get<uint64_t>();
     }
   };
 
