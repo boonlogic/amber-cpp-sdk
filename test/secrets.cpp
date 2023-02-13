@@ -41,8 +41,8 @@ amber_sdk *create_amber_client() {
                ? std::string(secrets[amber_license_id]["oauth-server"]).c_str()
                : std::string(secrets[amber_license_id]["server"]).c_str(),
            1);
-    amber_license_id = "";
-    amber_license_file = "";
+    amber_license_id = NULL;
+    amber_license_file = NULL;
     ac = new amber_sdk(amber_license_id, amber_license_file);
   }
 
