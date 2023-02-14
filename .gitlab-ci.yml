@@ -89,7 +89,7 @@ test-v2:
     BOON_MAX_INSTANCES: 1
     MONGO_URI: $V2_MONGO_URI
   script:
-    - ci-root/pipelines/expert-api/create-amberv1-test-config > ${CI_PROJECT_DIR}/ci-root/.Amber.license
+    - ci-root/pipelines/expert-api/create-amberv2-test-config > ${CI_PROJECT_DIR}/ci-root/.Amber.license
     - export AMBER_TEST_LICENSE_FILE=${CI_PROJECT_DIR}/ci-root/.Amber.license
     - cd ${CI_PROJECT_DIR}/ci-root/packages/amber-cpp-sdk/amber-cpp-sdk
     - echo "./runtest v2sdk"
