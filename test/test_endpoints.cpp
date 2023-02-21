@@ -315,7 +315,7 @@ TEST_F(endpoints, GetRootCauseNegative) {
 
 TEST_F(endpoints, PostOutage) {
   post_outage_response expected;
-  expected.clusterCount = 345;
+  expected.clusterCount = 358;
   expected.message = "";
   expected.retryCount = 0;
   expected.state = "Monitoring";
