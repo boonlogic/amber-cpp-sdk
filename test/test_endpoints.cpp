@@ -254,7 +254,7 @@ TEST_F(endpoints, GetStatus) {
   get_status_response response;
   ASSERT_EQ(amber->get_status(response, endpoints::get_sid()), nullptr);
   EXPECT_TRUE(!response.pca.value.empty());
-  EXPECT_EQ(response.numClusters, 345);
+  EXPECT_EQ(response.numClusters, 358);
 }
 
 TEST_F(endpoints, GetStatusNegative) {
@@ -271,7 +271,7 @@ TEST_F(endpoints, StreamSensor) {
   EXPECT_EQ(response.state, "Monitoring");
   EXPECT_EQ(response.message, "");
   EXPECT_EQ(response.progress, 0);
-  EXPECT_EQ(response.clusterCount, 345);
+  EXPECT_EQ(response.clusterCount, 358);
   EXPECT_EQ(response.retryCount, 0);
   EXPECT_EQ(response.streamingWindowSize, 25);
 
